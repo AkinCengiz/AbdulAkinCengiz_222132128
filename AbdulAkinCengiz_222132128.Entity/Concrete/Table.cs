@@ -10,6 +10,5 @@ public sealed class Table : BaseEntity
 {
     public string Name { get; set; }
     public byte Seats { get; set; }
-    public bool IsReserve { get; set; }
     public ICollection<Reservation> Reservations { get; set; }
 }

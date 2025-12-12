@@ -10,7 +10,7 @@ public sealed class Order : BaseEntity
 {
     public int ReservationId { get; set; }
     public Reservation Reservation { get; set; }
-    public ICollection<OrderItem> OrderItems { get; set; }
-    public decimal Total { get; set; }
-    public bool IsPaid { get; set; }
+    public ICollection<OrderItem>? OrderItems { get; set; }
+    public decimal Total { get; set; } = 0m;
+    public bool IsPaid { get; set; } = false;
 }

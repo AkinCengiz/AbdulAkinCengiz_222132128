@@ -7,11 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Abstract\" />
     <Folder Include="Concrete\" />
+    <Folder Include="Validations\Tables\" />
+    <Folder Include="Validations\Reservations\" />
+    <Folder Include="Validations\Products\" />
+    <Folder Include="Validations\Payments\" />
+    <Folder Include="Validations\Orders\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="16.0.0" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AbdulAkinCengiz_222132128.Entity\AbdulAkinCengiz_222132128.Entity.csproj" />
     <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
 

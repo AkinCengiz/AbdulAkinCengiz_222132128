@@ -18,11 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Abstract\" />
-    <Folder Include="Concrete\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\AbdulAkinCengiz_222132128.Entity\AbdulAkinCengiz_222132128.Entity.csproj" />
   </ItemGroup>
 
