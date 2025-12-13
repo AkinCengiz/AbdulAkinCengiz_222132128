@@ -7,7 +7,7 @@ using Core.Entity;
 using Microsoft.AspNetCore.Identity;
 
 namespace AbdulAkinCengiz_222132128.Entity.Concrete;
-public sealed class AppUser : IdentityUser,IEntity
+public sealed class AppUser : IdentityUser
 {
     public string FirstName { get; set; }
     public string LastName { get; set; }

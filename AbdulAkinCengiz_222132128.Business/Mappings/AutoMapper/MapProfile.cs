@@ -59,6 +59,12 @@ public class MapProfile : Profile
         CreateMap<Reservation, ReservationDetailResponseDto>();
         CreateMap<ReservationCreateRequestDto, Reservation>();
         CreateMap<ReservationUpdateRequestDto, Reservation>();
+        CreateMap<ReservationCreateWithCustomerRequestDto, Reservation>()
+            .ForMember(d => d.CustomerId, opt => opt.Ignore())
+            .ForMember(d => d.Customer, opt => opt.Ignore())
+            .ForMember(d => d.IsConfirm, opt => opt.Ignore())
+            .ForMember(d => d.Id, opt => opt.Ignore());
+
 
         CreateMap<Table, TableResponseDto>();
         CreateMap<Table, TableDetailResponseDto>();

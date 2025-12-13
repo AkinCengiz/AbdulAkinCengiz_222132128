@@ -7,12 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Concrete\" />
-    <Folder Include="Validations\Tables\" />
-    <Folder Include="Validations\Reservations\" />
-    <Folder Include="Validations\Products\" />
-    <Folder Include="Validations\Payments\" />
-    <Folder Include="Validations\Orders\" />
+    <Folder Include="Constants\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AbdulAkinCengiz_222132128.DataAccess\AbdulAkinCengiz_222132128.DataAccess.csproj" />
     <ProjectReference Include="..\AbdulAkinCengiz_222132128.Entity\AbdulAkinCengiz_222132128.Entity.csproj" />
     <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>

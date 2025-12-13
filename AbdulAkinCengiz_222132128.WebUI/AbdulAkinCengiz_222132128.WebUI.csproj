@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <PrivateAssets>all</PrivateAssets>
@@ -15,7 +17,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AbdulAkinCengiz_222132128.Business\AbdulAkinCengiz_222132128.Business.csproj" />
     <ProjectReference Include="..\AbdulAkinCengiz_222132128.DataAccess\AbdulAkinCengiz_222132128.DataAccess.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\Tables\" />
+    <Folder Include="Filters\" />
   </ItemGroup>
 
 </Project>

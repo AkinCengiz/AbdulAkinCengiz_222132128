@@ -9,9 +9,11 @@ using AbdulAkinCengiz_222132128.Entity.Concrete;
 using Core.DataAccess;
 
 namespace AbdulAkinCengiz_222132128.DataAccess.Concrete.EntityFramework;
-public class EfAppUserDal : EfGenericRepository<AppUser,AppDbContext>,IAppUserDal
+public class EfAppUserDal : IAppUserDal
 {
-    public EfAppUserDal(AppDbContext context) : base(context)
+    private readonly AppDbContext _appDbContext;
+    public EfAppUserDal(AppDbContext appDbContext)
     {
+        _appDbContext = appDbContext;
     }
 }

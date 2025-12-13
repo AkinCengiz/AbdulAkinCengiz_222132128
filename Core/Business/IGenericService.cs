@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Core.Business;
 public interface IGenericService<TEntity, TResponse, in TCreate, in TUpdate, TDetail>
-    where TEntity : class, IEntity, new()
+    where TEntity : class,IEntity, new()
     where TResponse : class, IResponseDto
     where TCreate : class, ICreateDto
     where TUpdate : class, IUpdateDto
@@ -16,7 +16,11 @@ public interface IGenericService<TEntity, TResponse, in TCreate, in TUpdate, TDe
 {
     Task<IDataResult<TResponse>> AddAsync(TCreate dto);
     Task<IResult> UpdateAsync(TUpdate dto);
-    Task<IResult> RemoveAsync(Guid id);
-    Task<IDataResult<TResponse>> GetByIdAsync(Guid id);
+    Task<IResult> RemoveAsync(int id);
+    Task<IDataResult<TResponse>> GetByIdAsync(int id);
     Task<IDataResult<IEnumerable<TResponse>>> GetAllAsync();
+    Task<IDataResult<IEnumerable<TResponse>>> GetAllDeletedAsync();
+    Task<IDataResult<TDetail>> GetDetailByIdAsync(int id);
+    Task<IDataResult<IEnumerable<TDetail>>> GetDetailAllAsync();
+    Task<IDataResult<IEnumerable<TDetail>>> GetDetailAllDeletedAsync();
 }

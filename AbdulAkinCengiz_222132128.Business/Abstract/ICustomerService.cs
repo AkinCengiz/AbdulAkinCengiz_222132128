@@ -10,4 +10,5 @@ using Core.Business;
 namespace AbdulAkinCengiz_222132128.Business.Abstract;
 public interface ICustomerService : IGenericService<Customer,CustomerResponseDto,CustomerCreateRequestDto,CustomerUpdateRequestDto,CustomerDetailResponseDto>
 {
+    Task<Customer> GetOrCreateCustomerAsync(CustomerCreateRequestDto dto);
 }

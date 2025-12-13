@@ -7,7 +7,7 @@ using AbdulAkinCengiz_222132128.Entity.Concrete;
 using Core.DataAccess;
 
 namespace AbdulAkinCengiz_222132128.DataAccess.Abstract;
-public interface IAppUserDal : IGenericRepository<AppUser>
+public interface IAppUserDal
 {
 
 }
