@@ -14,6 +14,7 @@ using Core.DataAccess;
 using Core.UnitOfWorks;
 using Core.Utilities.Results;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace AbdulAkinCengiz_222132128.Business.Concrete;
 public sealed class TableManager : ITableService
@@ -84,33 +85,75 @@ public sealed class TableManager : ITableService
         return new ErrorResult(ResultMessages.SuccessDeleted);
     }
 
-    public Task<IDataResult<TableResponseDto>> GetByIdAsync(int id)
+    public async Task<IDataResult<TableResponseDto>> GetByIdAsync(int id)
     {
-        throw new NotImplementedException();
+        var table = await _tableDal.GetAsync(t => t.Id == id);
+        if (table is null)
+        {
+            return new ErrorDataResult<TableResponseDto>(ResultMessages.NotFound);
+        }
+
+        var dto = _mapper.Map<TableResponseDto>(table);
+        return new SuccessDataResult<TableResponseDto>(dto, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<IEnumerable<TableResponseDto>>> GetAllAsync()
+    public async Task<IDataResult<IEnumerable<TableResponseDto>>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        try
+        {
+            var query = _tableDal.GetAll(t => !t.IsDeleted).AsNoTracking();
+
+            // 1) Buraya breakpoint koyun
+            var sql = query.ToQueryString(); // EF Core 5+
+            // sql değişkenini Watch'ta görün
+
+            // 2) Buraya breakpoint koyun
+            var tables = await query.ToListAsync();
+
+            // 3) Buraya breakpoint koyun
+            var dto = _mapper.Map<IEnumerable<TableResponseDto>>(tables);
+
+            return new SuccessDataResult<IEnumerable<TableResponseDto>>(dto, ResultMessages.SuccessListed);
+        }
+        catch (Exception ex)
+        {
+            return new ErrorDataResult<IEnumerable<TableResponseDto>>($"{ex.GetType().Name}: {ex.Message}");
+        }
+        //var tables = await _tableDal.GetAll(t => !t.IsDeleted).ToListAsync();
+        //var dto = _mapper.Map<IEnumerable<TableResponseDto>>(tables);
+        //return new SuccessDataResult<IEnumerable<TableResponseDto>>(dto, ResultMessages.SuccessListed);
     }
 
-    public Task<IDataResult<IEnumerable<TableResponseDto>>> GetAllDeletedAsync()
+    public async Task<IDataResult<IEnumerable<TableResponseDto>>> GetAllDeletedAsync()
     {
-        throw new NotImplementedException();
+        var tables = await _tableDal.GetAll(t => t.IsDeleted).ToListAsync();
+        var dto = _mapper.Map<IEnumerable<TableResponseDto>>(tables);
+        return new SuccessDataResult<IEnumerable<TableResponseDto>>(dto, ResultMessages.SuccessListed);
     }
 
-    public Task<IDataResult<TableDetailResponseDto>> GetDetailByIdAsync(int id)
+    public async Task<IDataResult<TableDetailResponseDto>> GetDetailByIdAsync(int id)
     {
-        throw new NotImplementedException();
+        var table = await _tableDal.GetAll(t => t.Id == id).Include(t => t.Reservations).FirstOrDefaultAsync();
+        if (table is null)
+        {
+            return new ErrorDataResult<TableDetailResponseDto>(ResultMessages.NotFound);
+        }
+
+        var dto = _mapper.Map<TableDetailResponseDto>(table);
+        return new SuccessDataResult<TableDetailResponseDto>(dto, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<IEnumerable<TableDetailResponseDto>>> GetDetailAllAsync()
+    public async Task<IDataResult<IEnumerable<TableDetailResponseDto>>> GetDetailAllAsync()
     {
-        throw new NotImplementedException();
+        var tables = await _tableDal.GetAll(t => !t.IsDeleted).Include(t => t.Reservations).ToListAsync();
+        var dto = _mapper.Map<IEnumerable<TableDetailResponseDto>>(tables);
+        return new SuccessDataResult<IEnumerable<TableDetailResponseDto>>(dto, ResultMessages.SuccessListed);
     }
 
-    public Task<IDataResult<IEnumerable<TableDetailResponseDto>>> GetDetailAllDeletedAsync()
+    public async Task<IDataResult<IEnumerable<TableDetailResponseDto>>> GetDetailAllDeletedAsync()
     {
-        throw new NotImplementedException();
+        var tables = await _tableDal.GetAll(t => t.IsDeleted).Include(t => t.Reservations).ToListAsync();
+        var dto = _mapper.Map<IEnumerable<TableDetailResponseDto>>(tables);
+        return new SuccessDataResult<IEnumerable<TableDetailResponseDto>>(dto, ResultMessages.SuccessListed);
     }
 }

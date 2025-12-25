@@ -1,4 +1,5 @@
-﻿using Core.Entity;
+﻿using AbdulAkinCengiz_222132128.Entity.Dtos.Product;
+using Core.Entity;
 
 namespace AbdulAkinCengiz_222132128.Entity.Dtos.Category;
 
@@ -8,6 +9,5 @@ public sealed record CategoryDetailResponseDto : IDetailDto
     public string Name { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
-    public DateTime CreateAt { get; set; }
-    public DateTime? UpdateAt { get; set; }
+    public ProductResponseDto Products { get; set; }
 }

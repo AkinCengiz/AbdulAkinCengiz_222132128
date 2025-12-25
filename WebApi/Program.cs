@@ -1,22 +1,21 @@
+using System.Reflection;
 using AbdulAkinCengiz_222132128.Business.Abstract;
 using AbdulAkinCengiz_222132128.Business.Concrete;
 using AbdulAkinCengiz_222132128.Business.Mappings.AutoMapper;
+using AbdulAkinCengiz_222132128.Business.Validations.Categories;
 using AbdulAkinCengiz_222132128.DataAccess.Abstract;
 using AbdulAkinCengiz_222132128.DataAccess.Concrete.EntityFramework;
 using AbdulAkinCengiz_222132128.DataAccess.Contexts;
+using AbdulAkinCengiz_222132128.DataAccess.UnitOfWorks;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
+using Core.UnitOfWorks;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
-using AbdulAkinCengiz_222132128.DataAccess.UnitOfWorks;
-using AbdulAkinCengiz_222132128.WebUI.Mappings;
-using Core.UnitOfWorks;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("AkinMons"),
@@ -62,39 +61,36 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<MapProfile>();
-    cfg.AddProfile<WebUIMapProfile>();
 });
+//builder.Services.AddValidatorsFromAssembly(
+//    typeof(ReservationManager).Assembly
+//);
+builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateDtoValidator>();
 
 
-builder.Services.AddValidatorsFromAssembly(
-    typeof(ReservationManager).Assembly
-);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllers();
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
+//if (app.Environment.IsDevelopment())
+//{
+//    app.MapOpenApi();
+//}
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseAuthentication();
-
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
+app.MapControllers();
 
 app.Run();

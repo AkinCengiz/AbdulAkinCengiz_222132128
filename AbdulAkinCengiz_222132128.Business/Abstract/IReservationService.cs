@@ -15,4 +15,6 @@ public interface IReservationService : IGenericService<Reservation,ReservationRe
     Task<IDataResult<IEnumerable<TableResponseDto>>> GetAvailableTablesAsync(
         DateTime startAt, DateTime endAt, byte guestCount);
 
+    Task<IResult> CreateWithCustomerAsync(ReservationCreateWithCustomerRequestDto dto);
+
 }

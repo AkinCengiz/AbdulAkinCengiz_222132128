@@ -1,8 +1,64 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model AbdulAkinCengiz_222132128.WebUI.Models.ReservationPageViewModel
+
+@{
+    ViewData["Title"] = "Rezervasyon";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<h2 class="mb-3">Rezervasyon Oluştur</h2>
+
+<!-- Mesajlar -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<!-- Arama Formu -->
+@await Component.InvokeAsync("_SearchFormComponentPartial")
+<hr />
+
+<!-- Uygun Masa Sonuçları -->
+@if (Model.Search.AvailableTables != null && Model.Search.AvailableTables.Any())
+{
+    <h4>Uygun Masalar</h4>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Masa</th>
+                <th>Kapasite</th>
+                <th>Rezervasyon</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var table in Model.Search.AvailableTables)
+            {
+                <tr>
+                    <td>@table.Name</td>
+                    <td>@table.Seats</td>
+
+                    <td>
+                        @await Component.InvokeAsync("_CreateReservationFormComponentPartial",new
+                        {
+                            tableId = table.Id,
+                            startAt = Model.Search.StartAt,
+                            endAt = Model.Search.EndAt,
+                            guestCount = Model.Search.GuestCount
+                        })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="text-muted">Henüz arama yapılmadı veya uygun masa bulunamadı.</p>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,29 @@
+﻿@model AbdulAkinCengiz_222132128.WebUI.Models.Reservations.ReservationCreateViewModel
+<form asp-action="CreateReservation" asp-controller="Home" method="post" class="row g-2">
+
+    <!-- gizli rezervasyon verileri -->
+    <input asp-for="TableId" type="hidden" />
+    <input asp-for="StartAt" type="hidden" value="@Model.StartAt.ToString("s")" />
+    <input asp-for="EndAt" type="hidden" value="@Model.EndAt.ToString("s")" />
+    <input asp-for="GuestCount" type="hidden" value="@Model.GuestCount" />
+
+    <div class="col-md-3">
+        <input asp-for="Customer.FirstName" class="form-control" placeholder="Ad" required />
+    </div>
+    <div class="col-md-3">
+        <input asp-for="Customer.LastName" class="form-control" placeholder="Soyad" required />
+    </div>
+    <div class="col-md-2">
+        <input asp-for="Customer.Phone" class="form-control" placeholder="Telefon" required />
+    </div>
+
+    <div class="col-md-2">
+        <input asp-for="Customer.Email" class="form-control" placeholder="E-posta (opsiyonel)" />
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-success w-100">
+            Rezervasyon Yap
+        </button>
+    </div>
+</form>

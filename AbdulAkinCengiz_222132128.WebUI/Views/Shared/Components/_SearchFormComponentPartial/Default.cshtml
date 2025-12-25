@@ -1,0 +1,30 @@
+﻿@model AbdulAkinCengiz_222132128.WebUI.Models.Tables.ReservationSearchTableViewModel
+
+<form asp-action="Index" asp-controller="Home" method="post" class="card p-3 mb-4">
+
+    <div class="row">
+        <div class="col-md-4">
+            <label class="form-label">Başlangıç Tarih/Saat</label>
+            <input asp-for="StartAt" value="@Model.StartAt.ToString("yyyy-MM-ddTHH:mm")" type="datetime-local" class="form-control" />
+            <span asp-validation-for="StartAt" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Bitiş Tarih/Saat</label>
+            <input asp-for="EndAt" value="@Model.EndAt.ToString("yyyy-MM-ddTHH:mm")" type="datetime-local" class="form-control" />
+            <span asp-validation-for="EndAt" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Misafir Sayısı</label>
+            <input asp-for="GuestCount" class="form-control" min="1" />
+            <span asp-validation-for="GuestCount" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="mt-3 text-end">
+        <button type="submit" class="btn btn-primary">
+            Uygun Masaları Listele
+        </button>
+    </div>
+</form>

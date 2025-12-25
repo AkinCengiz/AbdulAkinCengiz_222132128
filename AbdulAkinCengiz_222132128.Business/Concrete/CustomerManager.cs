@@ -47,6 +47,7 @@ public sealed class CustomerManager : ICustomerService
 
         var customer = _mapper.Map<Customer>(dto);
         await _customerDal.AddAsync(customer);
+        await _unitOfWork.CommitAsync();
 
         return customer;
     }

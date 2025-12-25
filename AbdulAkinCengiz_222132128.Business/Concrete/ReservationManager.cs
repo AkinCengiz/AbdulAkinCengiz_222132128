@@ -33,7 +33,7 @@ public sealed class ReservationManager : IReservationService
     private readonly IValidator<ReservationUpdateRequestDto> _updateValidator;
 
 
-    public ReservationManager(IReservationDal repository, IMapper mapper, IUnitOfWork unitOfWork, ICustomerService customerService, ITableDal tableDal, IValidator<ReservationCreateWithCustomerRequestDto> withCustomerValidator, IValidator<ReservationCreateRequestDto> createValidator, ICustomerDal customerDal)
+    public ReservationManager(IReservationDal repository, IMapper mapper, IUnitOfWork unitOfWork, ICustomerService customerService, ITableDal tableDal, IValidator<ReservationCreateWithCustomerRequestDto> withCustomerValidator, IValidator<ReservationCreateRequestDto> createValidator, ICustomerDal customerDal, IValidator<ReservationUpdateRequestDto> updateValidator)
     {
         _repository = repository;
         _mapper = mapper;
@@ -43,6 +43,7 @@ public sealed class ReservationManager : IReservationService
         _withCustomerValidator = withCustomerValidator;
         _createValidator = createValidator;
         _customerDal = customerDal;
+        _updateValidator = updateValidator;
     }
 
     public async Task<IResult> CreateWithCustomerAsync(ReservationCreateWithCustomerRequestDto dto)
@@ -55,7 +56,7 @@ public sealed class ReservationManager : IReservationService
             return new ErrorResult(ResultMessages.NotFound);
         }
 
-        if (!table.IsActive && table.IsDeleted)
+        if (!table.IsActive || table.IsDeleted)
         {
             return new ErrorResult("Masa şuan aktif değil...");
         }
@@ -243,7 +244,7 @@ public sealed class ReservationManager : IReservationService
 
     public async Task<IDataResult<ReservationResponseDto>> GetByIdAsync(int id)
     {
-        var reservation = _repository.GetAsync(r => r.Id == id);
+        var reservation = await _repository.GetAsync(r => r.Id == id);
 
         if (reservation is null)
         {

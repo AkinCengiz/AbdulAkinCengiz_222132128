@@ -130,7 +130,7 @@ public sealed class CategoryManager : ICategoryService
 
     public async Task<IDataResult<CategoryDetailResponseDto>> GetDetailByIdAsync(int id)
     {
-        var category = await _repository.GetAsync(c => c.Id == id);
+        var category = await _repository.GetAll(c => c.Id == id).Include(c => c.Products).FirstOrDefaultAsync();
 
         if (category is null)
         {

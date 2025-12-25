@@ -9,6 +9,4 @@ public interface IDetailDto : IResponseDto
 {
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
-    public DateTime CreateAt { get; set; }
-    public DateTime? UpdateAt { get; set; }
 }

@@ -12,13 +12,13 @@ public abstract class EfGenericRepository<TEntity,TContext> : IGenericRepository
 where TEntity : class, IEntity, new()
 where TContext : DbContext
 {
-    protected readonly TContext Context;
-    protected readonly DbSet<TEntity> _dbSet;
+    private readonly TContext _context;
+    private readonly DbSet<TEntity> _dbSet;
 
     protected EfGenericRepository(TContext context)
     {
-        Context = context;
-        _dbSet = Context.Set<TEntity>();
+        _context = context;
+        _dbSet = _context.Set<TEntity>();
     }
 
     public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> filter)
