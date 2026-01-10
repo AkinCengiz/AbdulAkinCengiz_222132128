@@ -9,5 +9,5 @@ using Core.DataAccess;
 namespace AbdulAkinCengiz_222132128.DataAccess.Abstract;
 public interface IAppUserDal
 {
-
+    //AppUser? GetByUserName(string userName);
 }

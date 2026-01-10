@@ -9,6 +9,31 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AbdulAkinCengiz_222132128.Business\AbdulAkinCengiz_222132128.Business.csproj" />
   </ItemGroup>
 

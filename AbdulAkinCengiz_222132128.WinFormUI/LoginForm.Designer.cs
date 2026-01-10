@@ -31,9 +31,10 @@ partial class LoginForm
         System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LoginForm));
         pictureBox1 = new PictureBox();
         gbxGiris = new GroupBox();
+        cbxRememberMe = new CheckBox();
         btnLogin = new Button();
         cbxShowPassword = new CheckBox();
-        textBox2 = new TextBox();
+        txtPassword = new TextBox();
         txtUserName = new TextBox();
         label2 = new Label();
         label1 = new Label();
@@ -50,15 +51,24 @@ partial class LoginForm
         // 
         // gbxGiris
         // 
+        gbxGiris.Controls.Add(cbxRememberMe);
         gbxGiris.Controls.Add(btnLogin);
         gbxGiris.Controls.Add(cbxShowPassword);
-        gbxGiris.Controls.Add(textBox2);
+        gbxGiris.Controls.Add(txtPassword);
         gbxGiris.Controls.Add(txtUserName);
         gbxGiris.Controls.Add(label2);
         gbxGiris.Controls.Add(label1);
         resources.ApplyResources(gbxGiris, "gbxGiris");
         gbxGiris.Name = "gbxGiris";
         gbxGiris.TabStop = false;
+        // 
+        // cbxRememberMe
+        // 
+        resources.ApplyResources(cbxRememberMe, "cbxRememberMe");
+        cbxRememberMe.Checked = true;
+        cbxRememberMe.CheckState = CheckState.Checked;
+        cbxRememberMe.Name = "cbxRememberMe";
+        cbxRememberMe.UseVisualStyleBackColor = true;
         // 
         // btnLogin
         // 
@@ -74,11 +84,13 @@ partial class LoginForm
         resources.ApplyResources(cbxShowPassword, "cbxShowPassword");
         cbxShowPassword.Name = "cbxShowPassword";
         cbxShowPassword.UseVisualStyleBackColor = true;
+        cbxShowPassword.CheckedChanged += cbxShowPassword_CheckedChanged;
         // 
-        // textBox2
+        // txtPassword
         // 
-        resources.ApplyResources(textBox2, "textBox2");
-        textBox2.Name = "textBox2";
+        resources.ApplyResources(txtPassword, "txtPassword");
+        txtPassword.Name = "txtPassword";
+        txtPassword.UseSystemPasswordChar = true;
         // 
         // txtUserName
         // 
@@ -126,11 +138,12 @@ partial class LoginForm
 
     private PictureBox pictureBox1;
     private GroupBox gbxGiris;
-    private TextBox textBox2;
+    private TextBox txtPassword;
     private TextBox txtUserName;
     private Label label2;
     private Label label1;
     private Button btnLogin;
     private CheckBox cbxShowPassword;
     private Button btnClose;
+    private CheckBox cbxRememberMe;
 }

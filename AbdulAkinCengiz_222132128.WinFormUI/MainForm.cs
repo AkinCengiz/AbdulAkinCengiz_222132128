@@ -25,6 +25,6 @@ namespace AbdulAkinCengiz_222132128.WinFormUI
 
         }
 
-        private List<>
+        
     }
 }

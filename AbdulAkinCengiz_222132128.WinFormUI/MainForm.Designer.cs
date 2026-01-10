@@ -275,7 +275,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Silver;
-            ClientSize = new Size(1105, 652);
+            ClientSize = new Size(1102, 652);
             Controls.Add(gbxReservations);
             Controls.Add(gbxReport);
             Controls.Add(btnProductManagement);
@@ -285,6 +285,7 @@
             Controls.Add(label1);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Name = "MainForm";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Rezervasyon Yönetim Sistemi";
             Load += MainForm_Load;
             gbxReport.ResumeLayout(false);
