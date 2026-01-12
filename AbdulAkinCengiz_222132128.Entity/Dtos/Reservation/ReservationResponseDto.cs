@@ -17,4 +17,7 @@ public sealed record ReservationResponseDto : IResponseDto
     public bool IsConfirm { get; set; }
     public TableResponseDto Table { get; set; }
     public CustomerResponseDto Customer { get; set; }
+
+    public string TableName => Table?.Name ?? "";
+    public string CustomerFullName => Customer != null ? $"{Customer.FirstName} {Customer.LastName}" : "";
 }

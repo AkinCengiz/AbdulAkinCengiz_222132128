@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AbdulAkinCengiz_222132128.Business.Abstract;
+﻿using AbdulAkinCengiz_222132128.Business.Abstract;
 using AbdulAkinCengiz_222132128.DataAccess.Abstract;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Table;
@@ -15,6 +10,13 @@ using Core.UnitOfWorks;
 using Core.Utilities.Results;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Text;
+using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace AbdulAkinCengiz_222132128.Business.Concrete;
 public sealed class TableManager : ITableService
@@ -77,8 +79,8 @@ public sealed class TableManager : ITableService
             return new ErrorDataResult<IResult>(ResultMessages.NotFound);
         }
 
-        table.IsActive = true;
-        table.IsDeleted = false;
+        table.IsActive = false;
+        table.IsDeleted = true;
 
         _tableDal.Update(table);
         await _unitOfWork.CommitAsync();
@@ -155,5 +157,55 @@ public sealed class TableManager : ITableService
         var tables = await _tableDal.GetAll(t => t.IsDeleted).Include(t => t.Reservations).ToListAsync();
         var dto = _mapper.Map<IEnumerable<TableDetailResponseDto>>(tables);
         return new SuccessDataResult<IEnumerable<TableDetailResponseDto>>(dto, ResultMessages.SuccessListed);
+    }
+
+    public async Task<IDataResult<List<TableCardDto>>> GetTableCardsAsync(TableStatus? statusFilter = null, int reservedThresholdMinutes = 30)
+    {
+        var now = DateTime.Now;
+        var reservedUntil = now.AddMinutes(reservedThresholdMinutes);
+
+        var query = _tableDal.GetAll(t => !t.IsDeleted && t.IsActive)
+            .AsNoTracking()
+            .Select(t => new TableCardDto
+            {
+                TableId = t.Id,
+                Name = t.Name,
+                Seats = t.Seats,
+
+                // Full: şu anda devam eden onaylı/aktif rezervasyon var
+                Status = t.Reservations.Any(r =>
+                    !r.IsDeleted && r.IsActive && r.IsConfirm &&
+                    (r.StartAt <= now && now < r.EndAt) || r.IsCheckedIn)
+                    ? TableStatus.Full
+                    : (
+                        // Reserved: şimdi yok ama X dakika içinde başlayacak rezervasyon var
+                        t.Reservations.Any(r =>
+                            !r.IsDeleted && r.IsActive && r.IsConfirm &&
+                            now < r.StartAt && r.StartAt <= reservedUntil)
+                            ? TableStatus.Reserved
+                            : TableStatus.Empty
+                    ),
+
+                // En yakın gelecek rezervasyon başlangıcı (opsiyonel)
+                NextReservationStartAt = t.Reservations
+                    .Where(r =>
+                        !r.IsDeleted && r.IsActive && r.IsConfirm &&
+                        r.StartAt >= now && !r.IsCheckedIn)
+                    .OrderBy(r => r.StartAt)
+                    .Select(r => (DateTime?)r.StartAt)
+                    .FirstOrDefault(),
+
+                // Sipariş modülünüz netleşince dolduracağız
+                ActiveOrderId = null
+            });
+
+        if (statusFilter.HasValue)
+            query = query.Where(x => x.Status == statusFilter.Value);
+
+        var list = await query
+            .OrderBy(x => x.Name) // Section yoksa en mantıklısı
+            .ToListAsync();
+
+        return new SuccessDataResult<List<TableCardDto>>(list, ResultMessages.SuccessListed);
     }
 }

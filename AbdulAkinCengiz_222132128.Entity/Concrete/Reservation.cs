@@ -13,9 +13,13 @@ public sealed class Reservation : BaseEntity
     public DateTime EndAt { get; set; }
     public byte GuestCount { get; set; }
     public bool IsConfirm { get; set; } = false;
+    public bool IsCheckedIn { get; set; }
+    public DateTime? CheckInAt { get; set; }
     public int TableId { get; set; }
     public Table Table { get; set; }
     public int CustomerId { get; set; }
     public Customer Customer { get; set; }
+    public int? OrderId { get; set; }
+    public Order Order { get; set; }
 }
 

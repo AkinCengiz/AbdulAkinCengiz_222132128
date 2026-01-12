@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,6 +14,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 {
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.Entity<Order>().HasOne(o => o.Reservation).WithOne(r => r.Order).HasForeignKey<Reservation>(r => r.OrderId);
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         base.OnModelCreating(builder);
     }

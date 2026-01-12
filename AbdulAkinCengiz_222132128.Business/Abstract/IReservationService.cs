@@ -16,5 +16,11 @@ public interface IReservationService : IGenericService<Reservation,ReservationRe
         DateTime startAt, DateTime endAt, byte guestCount);
 
     Task<IResult> CreateWithCustomerAsync(ReservationCreateWithCustomerRequestDto dto);
+    Task<IDataResult<IEnumerable<ReservationResponseDto>>> GetTodayReservationAsync();
+    Task<IResult> CheckInByTableAsync(int tableId);
+    Task<int?> GetActiveOrderIdByTableAsync(int tableId);
+    Task<IDataResult<int>> GetOrCreateActiveOrderIdByTableAsync(int tableId);
+    Task<IDataResult<List<ReservationResponseDto>>> GetReservationsByTableIdAsync(int tableId);
+
 
 }

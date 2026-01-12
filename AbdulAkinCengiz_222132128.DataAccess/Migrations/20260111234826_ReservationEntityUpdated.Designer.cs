@@ -4,6 +4,7 @@ using AbdulAkinCengiz_222132128.DataAccess.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260111234826_ReservationEntityUpdated")]
+    partial class ReservationEntityUpdated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -284,6 +287,8 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ReservationId");
+
                     b.ToTable("Orders");
                 });
 
@@ -446,9 +451,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("OrderId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("StartAt")
                         .HasColumnType("datetime2");
 
@@ -461,10 +463,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
-
-                    b.HasIndex("OrderId")
-                        .IsUnique()
-                        .HasFilter("[OrderId] IS NOT NULL");
 
                     b.HasIndex("TableId");
 
@@ -637,6 +635,17 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Order", b =>
+                {
+                    b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Reservation", "Reservation")
+                        .WithMany()
+                        .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reservation");
+                });
+
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.OrderItem", b =>
                 {
                     b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Order", "Order")
@@ -686,10 +695,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Order", "Order")
-                        .WithOne("Reservation")
-                        .HasForeignKey("AbdulAkinCengiz_222132128.Entity.Concrete.Reservation", "OrderId");
-
                     b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Table", "Table")
                         .WithMany("Reservations")
                         .HasForeignKey("TableId")
@@ -697,8 +702,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
-
-                    b.Navigation("Order");
 
                     b.Navigation("Table");
                 });
@@ -767,9 +770,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Order", b =>
                 {
                     b.Navigation("OrderItems");
-
-                    b.Navigation("Reservation")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Table", b =>

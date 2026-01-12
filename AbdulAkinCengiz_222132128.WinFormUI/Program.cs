@@ -98,6 +98,7 @@ internal static class Program
         services.AddScoped<IOrderItemService, OrderItemManager>();
         services.AddScoped<IPaymentService, PaymentManager>();
         services.AddScoped<IProductService, ProductManager>();
+        services.AddScoped<IDashboardService, DashboardManager>();
 
 
         services.AddAutoMapper(cfg =>
@@ -114,7 +115,9 @@ internal static class Program
             builder.AddDebug();
         });
 
-        services.AddScoped<LoginForm>();
-        services.AddScoped<MainForm>();
+        services.AddTransient<LoginForm>();
+        services.AddTransient<MainForm>();
+        services.AddTransient<TableListForm>();
+        services.AddTransient<OrderForm>();
     }
 }

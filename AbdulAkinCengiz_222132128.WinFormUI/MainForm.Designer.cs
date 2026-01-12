@@ -44,18 +44,18 @@
             lblReservationCount = new Label();
             label2 = new Label();
             gbxReservations = new GroupBox();
-            panel5 = new Panel();
-            dataGridView1 = new DataGridView();
             panel4 = new Panel();
+            panel5 = new Panel();
+            dgwTodayReservations = new DataGridView();
             label5 = new Label();
             gbxReport.SuspendLayout();
             panel2.SuspendLayout();
             panel3.SuspendLayout();
             panel1.SuspendLayout();
             gbxReservations.SuspendLayout();
-            panel5.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             panel4.SuspendLayout();
+            panel5.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgwTodayReservations).BeginInit();
             SuspendLayout();
             // 
             // label1
@@ -80,6 +80,7 @@
             btnTableList.TabIndex = 1;
             btnTableList.Text = "Masa Listesi";
             btnTableList.UseVisualStyleBackColor = false;
+            btnTableList.Click += btnTableList_Click;
             // 
             // btnCreateOrder
             // 
@@ -92,6 +93,7 @@
             btnCreateOrder.TabIndex = 2;
             btnCreateOrder.Text = "Sipariş Oluştur";
             btnCreateOrder.UseVisualStyleBackColor = false;
+            btnCreateOrder.Click += btnCreateOrder_Click;
             // 
             // btnGetPaid
             // 
@@ -226,39 +228,39 @@
             // 
             // gbxReservations
             // 
-            gbxReservations.Controls.Add(panel5);
             gbxReservations.Controls.Add(panel4);
-            gbxReservations.Location = new Point(12, 178);
+            gbxReservations.Location = new Point(12, 190);
             gbxReservations.Name = "gbxReservations";
-            gbxReservations.Size = new Size(1081, 462);
+            gbxReservations.Size = new Size(1081, 468);
             gbxReservations.TabIndex = 6;
             gbxReservations.TabStop = false;
             gbxReservations.Text = "Rezervasyonlar";
             // 
-            // panel5
-            // 
-            panel5.Controls.Add(dataGridView1);
-            panel5.Location = new Point(6, 71);
-            panel5.Name = "panel5";
-            panel5.Size = new Size(1069, 385);
-            panel5.TabIndex = 1;
-            // 
-            // dataGridView1
-            // 
-            dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Dock = DockStyle.Fill;
-            dataGridView1.Location = new Point(0, 0);
-            dataGridView1.Name = "dataGridView1";
-            dataGridView1.Size = new Size(1069, 385);
-            dataGridView1.TabIndex = 0;
-            // 
             // panel4
             // 
+            panel4.Controls.Add(panel5);
             panel4.Controls.Add(label5);
-            panel4.Location = new Point(6, 23);
+            panel4.Location = new Point(3, 19);
             panel4.Name = "panel4";
-            panel4.Size = new Size(1069, 42);
+            panel4.Size = new Size(1072, 440);
             panel4.TabIndex = 0;
+            // 
+            // panel5
+            // 
+            panel5.Controls.Add(dgwTodayReservations);
+            panel5.Location = new Point(9, 52);
+            panel5.Name = "panel5";
+            panel5.Size = new Size(1063, 385);
+            panel5.TabIndex = 1;
+            // 
+            // dgwTodayReservations
+            // 
+            dgwTodayReservations.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgwTodayReservations.Dock = DockStyle.Fill;
+            dgwTodayReservations.Location = new Point(0, 0);
+            dgwTodayReservations.Name = "dgwTodayReservations";
+            dgwTodayReservations.Size = new Size(1063, 385);
+            dgwTodayReservations.TabIndex = 0;
             // 
             // label5
             // 
@@ -275,7 +277,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Silver;
-            ClientSize = new Size(1102, 652);
+            ClientSize = new Size(1102, 668);
             Controls.Add(gbxReservations);
             Controls.Add(gbxReport);
             Controls.Add(btnProductManagement);
@@ -296,10 +298,10 @@
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             gbxReservations.ResumeLayout(false);
-            panel5.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
             panel4.ResumeLayout(false);
             panel4.PerformLayout();
+            panel5.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dgwTodayReservations).EndInit();
             ResumeLayout(false);
         }
 
@@ -324,6 +326,6 @@
         private Panel panel4;
         private Label label5;
         private Panel panel5;
-        private DataGridView dataGridView1;
+        private DataGridView dgwTodayReservations;
     }
 }
