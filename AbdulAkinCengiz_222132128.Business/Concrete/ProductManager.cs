@@ -49,6 +49,11 @@ public sealed class ProductManager : IProductService
         throw new NotImplementedException();
     }
 
+    public Task<IResult> DeleteAsync(int id)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<IDataResult<ProductResponseDto>> GetByIdAsync(int id)
     {
         throw new NotImplementedException();

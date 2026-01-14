@@ -395,6 +395,11 @@ public sealed class ReservationManager : IReservationService
         return new SuccessResult(ResultMessages.SuccessDeleted);
     }
 
+    public Task<IResult> DeleteAsync(int id)
+    {
+        throw new NotImplementedException();
+    }
+
 
     public async Task<IDataResult<ReservationResponseDto>> GetByIdAsync(int id)
     {

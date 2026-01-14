@@ -12,5 +12,6 @@ namespace AbdulAkinCengiz_222132128.Business.Abstract;
 public interface IOrderItemService : IGenericService<OrderItem, OrderItemResponseDto,OrderItemCreateRequestDto,OrderItemUpdateRequestDto,OrderItemDetailResponseDto>
 {
     Task<IResult> AddOrIncreaseAsync(int orderId, int productId, byte quantity);
+    Task<IDataResult<List<OrderItemResponseDto>>> GetOrderItemsByOrder(int orderId);
 
 }

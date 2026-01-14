@@ -1,21 +1,13 @@
 ﻿using AbdulAkinCengiz_222132128.Business.Abstract;
 using AbdulAkinCengiz_222132128.DataAccess.Abstract;
-using AbdulAkinCengiz_222132128.DataAccess.Concrete.EntityFramework;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Category;
 using AutoMapper;
-using Core.Business;
 using Core.Business.Constants;
-using Core.DataAccess;
 using Core.UnitOfWorks;
 using Core.Utilities.Results;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AbdulAkinCengiz_222132128.Business.Concrete;
 public sealed class CategoryManager : ICategoryService
@@ -46,8 +38,6 @@ public sealed class CategoryManager : ICategoryService
         }
 
         var entity = _mapper.Map<Category>(dto);
-        entity.IsActive = true;
-        entity.IsDeleted = false;
 
         await _repository.AddAsync(entity);
         await _unitOfWork.CommitAsync();
@@ -88,13 +78,23 @@ public sealed class CategoryManager : ICategoryService
             return new ErrorResult(ResultMessages.NotFound);
         }
 
-        entity.IsDeleted = true;
-        entity.IsActive = false;
-
-        _repository.Update(entity);
+        _repository.SoftDelete(entity);
         await _unitOfWork.CommitAsync();
 
         return new SuccessResult(ResultMessages.SuccessDeleted);
+    }
+
+    public async Task<IResult> DeleteAsync(int id)
+    {
+        var entity = await _repository.GetByIdAsync(id);
+        if (entity is null)
+        {
+            return new ErrorResult(ResultMessages.NotFound);
+        }
+        _repository.Remove(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessDeleted);
+
     }
 
     public async Task<IDataResult<CategoryResponseDto>> GetByIdAsync(int id)

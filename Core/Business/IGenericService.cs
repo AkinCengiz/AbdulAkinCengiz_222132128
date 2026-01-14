@@ -17,6 +17,7 @@ public interface IGenericService<TEntity, TResponse, in TCreate, in TUpdate, TDe
     Task<IDataResult<TResponse>> AddAsync(TCreate dto);
     Task<IResult> UpdateAsync(TUpdate dto);
     Task<IResult> RemoveAsync(int id);
+    Task<IResult> DeleteAsync(int id);
     Task<IDataResult<TResponse>> GetByIdAsync(int id);
     Task<IDataResult<IEnumerable<TResponse>>> GetAllAsync();
     Task<IDataResult<IEnumerable<TResponse>>> GetAllDeletedAsync();

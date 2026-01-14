@@ -31,6 +31,11 @@ public sealed class PaymentManager : IPaymentService
         throw new NotImplementedException();
     }
 
+    public Task<IResult> DeleteAsync(int id)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<IDataResult<PaymentResponseDto>> GetByIdAsync(int id)
     {
         throw new NotImplementedException();

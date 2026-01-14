@@ -73,18 +73,27 @@ public sealed class TableManager : ITableService
 
     public async Task<IResult> RemoveAsync(int id)
     {
-        var table = await _tableDal.GetAsync(t => t.Id == id && !t.IsDeleted);
+        var table = await _tableDal.GetByIdAsync(id);
         if (table is null)
         {
             return new ErrorDataResult<IResult>(ResultMessages.NotFound);
         }
 
-        table.IsActive = false;
-        table.IsDeleted = true;
-
-        _tableDal.Update(table);
+        _tableDal.SoftDelete(table);
         await _unitOfWork.CommitAsync();
-        return new ErrorResult(ResultMessages.SuccessDeleted);
+        return new SuccessResult(ResultMessages.SuccessDeleted);
+    }
+
+    public async Task<IResult> DeleteAsync(int id)
+    {
+        var entity = await _tableDal.GetByIdAsync(id);
+        if (entity is null)
+        {
+            return new ErrorDataResult<IResult>(ResultMessages.NotFound);
+        }
+        _tableDal.Remove(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessDeleted);
     }
 
     public async Task<IDataResult<TableResponseDto>> GetByIdAsync(int id)
@@ -105,14 +114,13 @@ public sealed class TableManager : ITableService
         {
             var query = _tableDal.GetAll(t => !t.IsDeleted).AsNoTracking();
 
-            // 1) Buraya breakpoint koyun
-            var sql = query.ToQueryString(); // EF Core 5+
-            // sql değişkenini Watch'ta görün
 
-            // 2) Buraya breakpoint koyun
+            var sql = query.ToQueryString();
+
+
+
             var tables = await query.ToListAsync();
 
-            // 3) Buraya breakpoint koyun
             var dto = _mapper.Map<IEnumerable<TableResponseDto>>(tables);
 
             return new SuccessDataResult<IEnumerable<TableResponseDto>>(dto, ResultMessages.SuccessListed);
@@ -121,9 +129,6 @@ public sealed class TableManager : ITableService
         {
             return new ErrorDataResult<IEnumerable<TableResponseDto>>($"{ex.GetType().Name}: {ex.Message}");
         }
-        //var tables = await _tableDal.GetAll(t => !t.IsDeleted).ToListAsync();
-        //var dto = _mapper.Map<IEnumerable<TableResponseDto>>(tables);
-        //return new SuccessDataResult<IEnumerable<TableResponseDto>>(dto, ResultMessages.SuccessListed);
     }
 
     public async Task<IDataResult<IEnumerable<TableResponseDto>>> GetAllDeletedAsync()
@@ -203,7 +208,7 @@ public sealed class TableManager : ITableService
             query = query.Where(x => x.Status == statusFilter.Value);
 
         var list = await query
-            .OrderBy(x => x.Name) // Section yoksa en mantıklısı
+            .OrderBy(x => x.Name)
             .ToListAsync();
 
         return new SuccessDataResult<List<TableCardDto>>(list, ResultMessages.SuccessListed);

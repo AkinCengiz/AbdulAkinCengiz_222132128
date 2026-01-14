@@ -1,24 +1,15 @@
 ﻿using AbdulAkinCengiz_222132128.Business.Abstract;
 using AbdulAkinCengiz_222132128.DataAccess.Abstract;
-using AbdulAkinCengiz_222132128.DataAccess.Concrete.EntityFramework;
-using AbdulAkinCengiz_222132128.DataAccess.UnitOfWorks;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Category;
 using AbdulAkinCengiz_222132128.Entity.Dtos.OrderItem;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Product;
 using AutoMapper;
-using Core.Business;
 using Core.Business.Constants;
-using Core.DataAccess;
 using Core.UnitOfWorks;
 using Core.Utilities.Results;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AbdulAkinCengiz_222132128.Entity.Dtos.Category;
-using AbdulAkinCengiz_222132128.Entity.Dtos.Product;
 
 namespace AbdulAkinCengiz_222132128.Business.Concrete;
 public sealed class OrderItemManager : IOrderItemService
@@ -42,19 +33,49 @@ public sealed class OrderItemManager : IOrderItemService
         _updateValidator = updateValidator;
     }
 
-    public Task<IDataResult<OrderItemResponseDto>> AddAsync(OrderItemCreateRequestDto dto)
+    public async Task<IDataResult<OrderItemResponseDto>> AddAsync(OrderItemCreateRequestDto dto)
     {
-        throw new NotImplementedException();
+        await _createValidator.ValidateAndThrowAsync(dto);
+        var entity = _mapper.Map<OrderItem>(dto);
+        await _orderItemDal.AddAsync(entity);
+        await _unitOfWork.CommitAsync();
+        var responseDto = _mapper.Map<OrderItemResponseDto>(entity);
+        return new SuccessDataResult<OrderItemResponseDto>(responseDto, ResultMessages.SuccessCreated);
     }
 
-    public Task<IResult> UpdateAsync(OrderItemUpdateRequestDto dto)
+    public async Task<IResult> UpdateAsync(OrderItemUpdateRequestDto dto)
     {
-        throw new NotImplementedException();
+        
+        var entity = await _orderItemDal.GetByIdAsync(dto.Id);
+        if (entity == null)
+            return new ErrorResult("Sipariş kalemi bulunamadı.");
+
+        await _updateValidator.ValidateAndThrowAsync(dto);
+
+        _mapper.Map(dto, entity);
+        _orderItemDal.Update(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessUpdated);
     }
 
-    public Task<IResult> RemoveAsync(int id)
+    public async Task<IResult> RemoveAsync(int id)
     {
-        throw new NotImplementedException();
+        var entity = await _orderItemDal.GetByIdAsync(id);
+        if (entity == null)
+            return new ErrorResult("Sipariş kalemi bulunamadı.");
+        _orderItemDal.SoftDelete(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessDeleted);
+    }
+
+    public async Task<IResult> DeleteAsync(int id)
+    {
+        var entity = await _orderItemDal.GetByIdAsync(id);
+        if (entity == null)
+            return new ErrorResult("Sipariş kalemi bulunamadı.");
+        _orderItemDal.Remove(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessDeleted);
     }
 
     public async Task<IDataResult<OrderItemResponseDto>> GetByIdAsync(int id)
@@ -94,29 +115,41 @@ public sealed class OrderItemManager : IOrderItemService
         return new SuccessDataResult<OrderItemResponseDto>(entity, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<IEnumerable<OrderItemResponseDto>>> GetAllAsync()
+    public async Task<IDataResult<IEnumerable<OrderItemResponseDto>>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        var entity = _orderItemDal.GetAll(o => !o.IsDeleted).OrderBy(o => o.OrderId).ToListAsync();
+        var dto = _mapper.Map<IEnumerable<OrderItemResponseDto>>(entity);
+        return new SuccessDataResult<IEnumerable<OrderItemResponseDto>>(dto, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<IEnumerable<OrderItemResponseDto>>> GetAllDeletedAsync()
+    public async Task<IDataResult<IEnumerable<OrderItemResponseDto>>> GetAllDeletedAsync()
     {
-        throw new NotImplementedException();
+        var entity = await _orderItemDal.GetAll(oi => !oi.IsDeleted).OrderBy(oi => oi.OrderId).ToListAsync();
+        var dto = _mapper.Map<IEnumerable<OrderItemResponseDto>>(entity);
+        return new SuccessDataResult<IEnumerable<OrderItemResponseDto>>(dto, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<OrderItemDetailResponseDto>> GetDetailByIdAsync(int id)
+    public async Task<IDataResult<OrderItemDetailResponseDto>> GetDetailByIdAsync(int id)
     {
-        throw new NotImplementedException();
+        var entity = await _orderItemDal.GetByIdAsync(id);
+        if (entity == null)
+            return new ErrorDataResult<OrderItemDetailResponseDto>("Sipariş kalemi bulunamadı.");
+        var dto = _mapper.Map<OrderItemDetailResponseDto>(entity);
+        return new SuccessDataResult<OrderItemDetailResponseDto>(dto, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<IEnumerable<OrderItemDetailResponseDto>>> GetDetailAllAsync()
+    public async Task<IDataResult<IEnumerable<OrderItemDetailResponseDto>>> GetDetailAllAsync()
     {
-        throw new NotImplementedException();
+        var entities = await _orderItemDal.GetAll(oi => !oi.IsDeleted).OrderBy(oi => oi.OrderId).ToListAsync();
+        var dto = _mapper.Map<IEnumerable<OrderItemDetailResponseDto>>(entities);
+        return new SuccessDataResult<IEnumerable<OrderItemDetailResponseDto>>(dto, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<IEnumerable<OrderItemDetailResponseDto>>> GetDetailAllDeletedAsync()
+    public async Task<IDataResult<IEnumerable<OrderItemDetailResponseDto>>> GetDetailAllDeletedAsync()
     {
-        throw new NotImplementedException();
+        var entities = await _orderItemDal.GetAll(oi => oi.IsDeleted).OrderBy(oi => oi.OrderId).ToListAsync();
+        var dto = _mapper.Map<IEnumerable<OrderItemDetailResponseDto>>(entities);
+        return new SuccessDataResult<IEnumerable<OrderItemDetailResponseDto>>(dto, ResultMessages.SuccessGet);
     }
 
     public async Task<IResult> AddOrIncreaseAsync(int orderId, int productId, byte quantity)
@@ -161,11 +194,18 @@ public sealed class OrderItemManager : IOrderItemService
             _orderItemDal.Update(item);
         }
 
-        // stok düş (istiyorsanız)
+        // stok düş
         product.Stock -= quantity;
         _productDal.Update(product);
 
         await _unitOfWork.CommitAsync();
         return new SuccessResult("Ürün siparişe eklendi.");
+    }
+
+    public async Task<IDataResult<List<OrderItemResponseDto>>> GetOrderItemsByOrder(int orderId)
+    {
+        var orderItems = await _orderItemDal.GetAll(oi => !oi.IsDeleted && oi.OrderId == orderId).ToListAsync();
+        var dto = _mapper.Map<List<OrderItemResponseDto>>(orderItems);
+        return new SuccessDataResult<List<OrderItemResponseDto>>(dto,ResultMessages.SuccessListed);
     }
 }

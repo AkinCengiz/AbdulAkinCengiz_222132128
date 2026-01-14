@@ -17,7 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 namespace Core.Business;
 public abstract class GenericManager<TEntity,TResponse,TCreate,TUpdate,TDetail> 
     //: IGenericService<TEntity, TResponse, TCreate, TUpdate, TDetail>
-where TEntity : class, IEntity, new()
+where TEntity : BaseEntity, new()
 where TResponse : class,IResponseDto,new()
 where TCreate : class,ICreateDto, new()
 where TUpdate : class,IUpdateDto, new()

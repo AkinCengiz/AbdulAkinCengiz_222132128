@@ -99,18 +99,27 @@ public sealed class CustomerManager : ICustomerService
 
     public async Task<IResult> RemoveAsync(int id)
     {
-        var entity = await _customerDal.GetAsync(c => c.Id == id && !c.IsDeleted);
+        var entity = await _customerDal.GetByIdAsync(id);
         if (entity is null)
         {
             return new ErrorResult(ResultMessages.NotFound);
         }
 
-        entity.IsDeleted = true;
-        entity.IsActive = false;
-
-        _customerDal.Update(entity);
+        _customerDal.SoftDelete(entity);
         await _unitOfWork.CommitAsync();
 
+        return new SuccessResult(ResultMessages.SuccessDeleted);
+    }
+
+    public async Task<IResult> DeleteAsync(int id)
+    {
+        var entity = await _customerDal.GetByIdAsync(id);
+        if (entity is null)
+        {
+            return new ErrorResult(ResultMessages.NotFound);
+        }
+        _customerDal.Remove(entity);
+        await _unitOfWork.CommitAsync();
         return new SuccessResult(ResultMessages.SuccessDeleted);
     }
 

@@ -26,6 +26,11 @@ where TContext : DbContext
         return await _dbSet.FirstOrDefaultAsync(filter);
     }
 
+    public async Task<TEntity?> GetByIdAsync(int id)
+    {
+        return await _dbSet.FindAsync(id);
+    }
+
     public IQueryable<TEntity> GetAll(Expression<Func<TEntity, bool>> filter = null)
     {
         return filter == null ? _dbSet : _dbSet.Where(filter);
@@ -43,11 +48,20 @@ where TContext : DbContext
 
     public void Update(TEntity entity)
     {
+        entity.UpdateAt = DateTime.Now;
         _dbSet.Update(entity);
     }
 
     public void Remove(TEntity entity)
     {
         _dbSet.Remove(entity);
+    }
+
+    public void SoftDelete(TEntity entity)
+    {
+        entity.UpdateAt = DateTime.Now;
+        entity.IsDeleted = true;
+        entity.IsActive = false;
+        _dbSet.Update(entity);
     }
 }
