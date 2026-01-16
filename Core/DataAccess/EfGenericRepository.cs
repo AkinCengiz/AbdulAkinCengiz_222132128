@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Core.DataAccess;
 public abstract class EfGenericRepository<TEntity,TContext> : IGenericRepository<TEntity>
-where TEntity : class, IEntity, new()
+where TEntity : BaseEntity, new()
 where TContext : DbContext
 {
     private readonly TContext _context;

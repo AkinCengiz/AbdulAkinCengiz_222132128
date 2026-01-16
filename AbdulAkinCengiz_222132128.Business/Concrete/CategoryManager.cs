@@ -2,6 +2,7 @@
 using AbdulAkinCengiz_222132128.DataAccess.Abstract;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Category;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Order;
 using AutoMapper;
 using Core.Business.Constants;
 using Core.UnitOfWorks;
@@ -29,7 +30,15 @@ public sealed class CategoryManager : ICategoryService
 
     public async Task<IDataResult<CategoryResponseDto>> AddAsync(CategoryCreateRequestDto dto)
     {
-        await _createValidator.ValidateAndThrowAsync(dto);
+        var validate = await _createValidator.ValidateAsync(dto);
+        if (!validate.IsValid)
+        {
+            var errors = validate.Errors
+                .Select(e => e.ErrorMessage)
+                .Distinct()
+                .ToList();
+            return new ErrorDataResult<CategoryResponseDto>(String.Join(" | ", errors));
+        }
 
         var exists = await _repository.AnyAsync(c => c.Name == dto.Name);
         if (exists)
@@ -56,11 +65,11 @@ public sealed class CategoryManager : ICategoryService
             return new ErrorResult(ResultMessages.NotFound);
         }
 
-        var nameExists = await _repository.AnyAsync(c => c.Name == dto.Name);
-        if (nameExists)
-        {
-            return new ErrorResult("Aynı isimde başka bir kategori mevcut.");
-        }
+        //var nameExists = await _repository.AnyAsync(c => c.Name == dto.Name);
+        //if (nameExists)
+        //{
+        //    return new ErrorResult("Aynı isimde başka bir kategori mevcut.");
+        //}
 
         _mapper.Map(dto, entity);
 

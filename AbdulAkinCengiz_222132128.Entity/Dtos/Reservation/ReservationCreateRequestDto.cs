@@ -1,4 +1,5 @@
-﻿using Core.Entity;
+﻿using AbdulAkinCengiz_222132128.Entity.Dtos.Customer;
+using Core.Entity;
 
 namespace AbdulAkinCengiz_222132128.Entity.Dtos.Reservation;
 

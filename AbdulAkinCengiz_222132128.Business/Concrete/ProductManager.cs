@@ -1,6 +1,7 @@
 ﻿using AbdulAkinCengiz_222132128.Business.Abstract;
 using AbdulAkinCengiz_222132128.DataAccess.Abstract;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Order;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Product;
 using AutoMapper;
 using Core.Business;
@@ -12,6 +13,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,29 +36,87 @@ public sealed class ProductManager : IProductService
         _updateValidator = updateValidator;
     }
 
-    public Task<IDataResult<ProductResponseDto>> AddAsync(ProductCreateRequestDto dto)
+    public async Task<IDataResult<ProductResponseDto>> AddAsync(ProductCreateRequestDto dto)
     {
-        throw new NotImplementedException();
+        var validate = await _createValidator.ValidateAsync(dto);
+        if (!validate.IsValid)
+        {
+            var errors = validate.Errors
+                .Select(e => e.ErrorMessage)
+                .Distinct()
+                .ToList();
+            return new ErrorDataResult<ProductResponseDto>(String.Join(" | ", errors));
+        }
+
+        var exists = await _productDal.AnyAsync(p => p.Name == dto.Name);
+        if (exists)
+        {
+            return new ErrorDataResult<ProductResponseDto>("Aynı isimde ürün zaten mevcut...");
+        }
+
+        var entity = _mapper.Map<Product>(dto);
+        await _productDal.AddAsync(entity);
+        await _unitOfWork.CommitAsync();
+        var response = _mapper.Map<ProductResponseDto>(entity);
+        return new SuccessDataResult<ProductResponseDto>(response, ResultMessages.SuccessCreated);
     }
 
-    public Task<IResult> UpdateAsync(ProductUpdateRequestDto dto)
+    public async Task<IResult> UpdateAsync(ProductUpdateRequestDto dto)
     {
-        throw new NotImplementedException();
+        var isValid = await _updateValidator.ValidateAsync(dto);
+        if (!isValid.IsValid)
+        {
+            var errors = isValid.Errors.Select(e => e.ErrorMessage).Distinct().ToList();
+            return new ErrorDataResult<ProductResponseDto>(String.Join(" | ", errors));
+        }
+
+        var entity = await _productDal.GetByIdAsync(dto.Id);
+        if (entity is null)
+        {
+            return new ErrorResult(ResultMessages.NotFound);
+        }
+
+        _mapper.Map(dto, entity);
+        _productDal.Update(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessUpdated);
     }
 
-    public Task<IResult> RemoveAsync(int id)
+    public async Task<IResult> RemoveAsync(int id)
     {
-        throw new NotImplementedException();
+        var entity = await _productDal.GetByIdAsync(id);
+        if (entity is null)
+        {
+            return new ErrorResult(ResultMessages.NotFound);
+        }
+        _productDal.SoftDelete(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessDeleted);
     }
 
-    public Task<IResult> DeleteAsync(int id)
+    public async Task<IResult> DeleteAsync(int id)
     {
-        throw new NotImplementedException();
+        var entity = await _productDal.GetByIdAsync(id);
+        if (entity is null)
+        {
+            return new ErrorResult(ResultMessages.NotFound);
+        }
+        _productDal.Remove(entity);
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult(ResultMessages.SuccessDeleted);
     }
 
-    public Task<IDataResult<ProductResponseDto>> GetByIdAsync(int id)
+    public async Task<IDataResult<ProductResponseDto>> GetByIdAsync(int id)
     {
-        throw new NotImplementedException();
+        var entity = await _productDal.GetByIdAsync(id);
+
+        if (entity is null)
+        {
+            return new ErrorDataResult<ProductResponseDto>(ResultMessages.NotFound);
+        }
+
+        var dto = _mapper.Map<ProductResponseDto>(entity);
+        return new SuccessDataResult<ProductResponseDto>(dto, ResultMessages.SuccessGet);
     }
 
     public async Task<IDataResult<IEnumerable<ProductResponseDto>>> GetAllAsync()
@@ -77,24 +137,71 @@ public sealed class ProductManager : IProductService
         }
     }
 
-    public Task<IDataResult<IEnumerable<ProductResponseDto>>> GetAllDeletedAsync()
+    public async Task<IDataResult<IEnumerable<ProductResponseDto>>> GetAllDeletedAsync()
     {
-        throw new NotImplementedException();
+        try
+        {
+            var products = _productDal
+                .GetAll(p => p.IsDeleted)
+                .AsNoTracking()
+                .OrderBy(p => p.Name)
+                .ToList();
+            var dto = _mapper.Map<IEnumerable<ProductResponseDto>>(products);
+            return new SuccessDataResult<IEnumerable<ProductResponseDto>>(dto, ResultMessages.SuccessListed);
+        }
+        catch (Exception e)
+        {
+            return new ErrorDataResult<IEnumerable<ProductResponseDto>>(ResultMessages.ErrorListed);
+        }
     }
 
-    public Task<IDataResult<ProductDetailResponseDto>> GetDetailByIdAsync(int id)
+    public async Task<IDataResult<ProductDetailResponseDto>> GetDetailByIdAsync(int id)
     {
-        throw new NotImplementedException();
+        var entity = await _productDal.GetByIdAsync(id);
+
+        if (entity is null)
+        {
+            return new ErrorDataResult<ProductDetailResponseDto>(ResultMessages.NotFound);
+        }
+
+        var dto = _mapper.Map<ProductDetailResponseDto>(entity);
+        return new SuccessDataResult<ProductDetailResponseDto>(dto, ResultMessages.SuccessGet);
     }
 
-    public Task<IDataResult<IEnumerable<ProductDetailResponseDto>>> GetDetailAllAsync()
+    public async Task<IDataResult<IEnumerable<ProductDetailResponseDto>>> GetDetailAllAsync()
     {
-        throw new NotImplementedException();
+        try
+        {
+            var products = _productDal
+                .GetAll(p => !p.IsDeleted && p.IsActive)
+                .AsNoTracking()
+                .OrderBy(p => p.Name)
+                .ToList();
+            var dto = _mapper.Map<IEnumerable<ProductDetailResponseDto>>(products);
+            return new SuccessDataResult<IEnumerable<ProductDetailResponseDto>>(dto, ResultMessages.SuccessListed);
+        }
+        catch (Exception e)
+        {
+            return new ErrorDataResult<IEnumerable<ProductDetailResponseDto>>(ResultMessages.ErrorListed);
+        }
     }
 
-    public Task<IDataResult<IEnumerable<ProductDetailResponseDto>>> GetDetailAllDeletedAsync()
+    public async Task<IDataResult<IEnumerable<ProductDetailResponseDto>>> GetDetailAllDeletedAsync()
     {
-        throw new NotImplementedException();
+        try
+        {
+            var products = _productDal
+                .GetAll(p => !p.IsDeleted)
+                .AsNoTracking()
+                .OrderBy(p => p.Name)
+                .ToList();
+            var dto = _mapper.Map<IEnumerable<ProductDetailResponseDto>>(products);
+            return new SuccessDataResult<IEnumerable<ProductDetailResponseDto>>(dto, ResultMessages.SuccessListed);
+        }
+        catch (Exception e)
+        {
+            return new ErrorDataResult<IEnumerable<ProductDetailResponseDto>>(ResultMessages.ErrorListed);
+        }
     }
 
     public async Task<IDataResult<List<ProductResponseDto>>> GetProductByCategoryIdAsync(int categoryId)

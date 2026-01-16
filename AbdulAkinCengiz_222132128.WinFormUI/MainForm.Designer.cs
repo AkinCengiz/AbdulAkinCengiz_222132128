@@ -48,6 +48,7 @@
             panel5 = new Panel();
             dgwTodayReservations = new DataGridView();
             label5 = new Label();
+            btnReservation = new Button();
             gbxReport.SuspendLayout();
             panel2.SuspendLayout();
             panel3.SuspendLayout();
@@ -74,7 +75,7 @@
             btnTableList.BackColor = Color.Blue;
             btnTableList.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnTableList.ForeColor = Color.White;
-            btnTableList.Location = new Point(571, 12);
+            btnTableList.Location = new Point(522, 12);
             btnTableList.Name = "btnTableList";
             btnTableList.Size = new Size(126, 57);
             btnTableList.TabIndex = 1;
@@ -87,7 +88,7 @@
             btnCreateOrder.BackColor = Color.Blue;
             btnCreateOrder.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnCreateOrder.ForeColor = Color.White;
-            btnCreateOrder.Location = new Point(703, 12);
+            btnCreateOrder.Location = new Point(654, 12);
             btnCreateOrder.Name = "btnCreateOrder";
             btnCreateOrder.Size = new Size(126, 57);
             btnCreateOrder.TabIndex = 2;
@@ -100,7 +101,7 @@
             btnGetPaid.BackColor = Color.Blue;
             btnGetPaid.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnGetPaid.ForeColor = Color.White;
-            btnGetPaid.Location = new Point(835, 12);
+            btnGetPaid.Location = new Point(786, 12);
             btnGetPaid.Name = "btnGetPaid";
             btnGetPaid.Size = new Size(126, 57);
             btnGetPaid.TabIndex = 3;
@@ -112,11 +113,11 @@
             btnProductManagement.BackColor = Color.Blue;
             btnProductManagement.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnProductManagement.ForeColor = Color.White;
-            btnProductManagement.Location = new Point(967, 12);
+            btnProductManagement.Location = new Point(918, 12);
             btnProductManagement.Name = "btnProductManagement";
-            btnProductManagement.Size = new Size(126, 57);
+            btnProductManagement.Size = new Size(175, 57);
             btnProductManagement.TabIndex = 4;
-            btnProductManagement.Text = "Ürün Yönetimi";
+            btnProductManagement.Text = "Ürün ve Kategori Yönetimi";
             btnProductManagement.UseVisualStyleBackColor = false;
             // 
             // gbxReport
@@ -272,12 +273,26 @@
             label5.TabIndex = 0;
             label5.Text = "Bugünkü Rezervasyonlar";
             // 
+            // btnReservation
+            // 
+            btnReservation.BackColor = Color.Blue;
+            btnReservation.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            btnReservation.ForeColor = Color.White;
+            btnReservation.Location = new Point(390, 12);
+            btnReservation.Name = "btnReservation";
+            btnReservation.Size = new Size(126, 57);
+            btnReservation.TabIndex = 7;
+            btnReservation.Text = "Rezervasyon İşlemleri";
+            btnReservation.UseVisualStyleBackColor = false;
+            btnReservation.Click += btnReservation_Click;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Silver;
             ClientSize = new Size(1102, 668);
+            Controls.Add(btnReservation);
             Controls.Add(gbxReservations);
             Controls.Add(gbxReport);
             Controls.Add(btnProductManagement);
@@ -327,5 +342,6 @@
         private Label label5;
         private Panel panel5;
         private DataGridView dgwTodayReservations;
+        private Button btnReservation;
     }
 }

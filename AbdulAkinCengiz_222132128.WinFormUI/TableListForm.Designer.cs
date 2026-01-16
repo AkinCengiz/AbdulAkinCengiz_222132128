@@ -41,7 +41,7 @@ partial class TableListForm
         lblStatus = new Label();
         label7 = new Label();
         btnTableClose = new Button();
-        btnGetOrder = new Button();
+        btnTableManagement = new Button();
         lblOrderNumber = new Label();
         label6 = new Label();
         lblGuestCount = new Label();
@@ -149,7 +149,7 @@ partial class TableListForm
         panel2.Controls.Add(lblStatus);
         panel2.Controls.Add(label7);
         panel2.Controls.Add(btnTableClose);
-        panel2.Controls.Add(btnGetOrder);
+        panel2.Controls.Add(btnTableManagement);
         panel2.Controls.Add(lblOrderNumber);
         panel2.Controls.Add(label6);
         panel2.Controls.Add(lblGuestCount);
@@ -185,7 +185,7 @@ partial class TableListForm
         btnTableClose.BackColor = Color.Red;
         btnTableClose.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 162);
         btnTableClose.ForeColor = Color.White;
-        btnTableClose.Location = new Point(13, 256);
+        btnTableClose.Location = new Point(13, 199);
         btnTableClose.Name = "btnTableClose";
         btnTableClose.Size = new Size(198, 50);
         btnTableClose.TabIndex = 8;
@@ -193,18 +193,18 @@ partial class TableListForm
         btnTableClose.UseVisualStyleBackColor = false;
         btnTableClose.Click += btnTableClose_Click;
         // 
-        // btnGetOrder
+        // btnTableManagement
         // 
-        btnGetOrder.BackColor = Color.RoyalBlue;
-        btnGetOrder.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 162);
-        btnGetOrder.ForeColor = Color.White;
-        btnGetOrder.Location = new Point(13, 200);
-        btnGetOrder.Name = "btnGetOrder";
-        btnGetOrder.Size = new Size(198, 50);
-        btnGetOrder.TabIndex = 7;
-        btnGetOrder.Text = "Siparişi Gör";
-        btnGetOrder.UseVisualStyleBackColor = false;
-        btnGetOrder.Click += btnGetOrder_Click;
+        btnTableManagement.BackColor = Color.RoyalBlue;
+        btnTableManagement.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 162);
+        btnTableManagement.ForeColor = Color.White;
+        btnTableManagement.Location = new Point(13, 255);
+        btnTableManagement.Name = "btnTableManagement";
+        btnTableManagement.Size = new Size(198, 50);
+        btnTableManagement.TabIndex = 7;
+        btnTableManagement.Text = "Masa Yönetimi";
+        btnTableManagement.UseVisualStyleBackColor = false;
+        btnTableManagement.Click += btnTableManagement_Click;
         // 
         // lblOrderNumber
         // 
@@ -293,7 +293,7 @@ partial class TableListForm
     private Label label4;
     private Label lblTable;
     private Button btnTableClose;
-    private Button btnGetOrder;
+    private Button btnTableManagement;
     private Label lblOrderNumber;
     private Label label6;
     private FlowLayoutPanel flpTables;

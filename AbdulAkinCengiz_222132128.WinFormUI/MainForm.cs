@@ -147,5 +147,11 @@ namespace AbdulAkinCengiz_222132128.WinFormUI
             OrderForm orderForm = _serviceProvider.GetRequiredService<OrderForm>();
             orderForm.ShowDialog();
         }
+
+        private void btnReservation_Click(object sender, EventArgs e)
+        {
+            ReservationForm reservationForm = _serviceProvider.GetRequiredService<ReservationForm>();
+            reservationForm.ShowDialog();
+        }
     }
 }

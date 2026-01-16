@@ -3,20 +3,11 @@ using AbdulAkinCengiz_222132128.DataAccess.Abstract;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Table;
 using AutoMapper;
-using Core.Business;
 using Core.Business.Constants;
-using Core.DataAccess;
 using Core.UnitOfWorks;
 using Core.Utilities.Results;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Collections.Specialized.BitVector32;
 
 namespace AbdulAkinCengiz_222132128.Business.Concrete;
 public sealed class TableManager : ITableService
@@ -112,7 +103,7 @@ public sealed class TableManager : ITableService
     {
         try
         {
-            var query = _tableDal.GetAll(t => !t.IsDeleted).AsNoTracking();
+            var query = _tableDal.GetAll(t => !t.IsDeleted).OrderBy(t => t.Name).AsNoTracking();
 
 
             var sql = query.ToQueryString();
@@ -180,7 +171,7 @@ public sealed class TableManager : ITableService
                 // Full: şu anda devam eden onaylı/aktif rezervasyon var
                 Status = t.Reservations.Any(r =>
                     !r.IsDeleted && r.IsActive && r.IsConfirm &&
-                    (r.StartAt <= now && now < r.EndAt) || r.IsCheckedIn)
+                    ((r.StartAt <= now && now < r.EndAt) || (r.IsCheckedIn && now < r.EndAt)))
                     ? TableStatus.Full
                     : (
                         // Reserved: şimdi yok ama X dakika içinde başlayacak rezervasyon var

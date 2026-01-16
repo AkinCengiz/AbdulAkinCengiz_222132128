@@ -170,6 +170,8 @@ public sealed class ReservationManager : IReservationService
         reservation.IsCheckedIn = true;
         reservation.CheckInAt = now;
 
+        reservation.IsConfirm = true;
+        reservation.UpdateAt = now;
         _repository.Update(reservation);
 
         // 4) Eğer bu rezervasyona ait Order yoksa oluştur
@@ -192,6 +194,55 @@ public sealed class ReservationManager : IReservationService
 
         return new SuccessResult("Check-in yapıldı. Masa dolu duruma geçti.");
     }
+    public async Task<IResult> UnCheckInByTableAsync(int tableId)
+    {
+        if (tableId <= 0)
+            return new ErrorResult("Geçersiz masa.");
+
+        var now = DateTime.Now;
+
+        // 1) Bu masada aktif check-in var mı?
+        var reservation = await _repository.GetAll(r =>
+                r.TableId == tableId &&
+                r.IsCheckedIn &&
+                r.IsActive &&
+                !r.IsDeleted)
+            .OrderByDescending(r => r.CheckInAt)
+            .FirstOrDefaultAsync();
+
+        if (reservation is null)
+            return new ErrorResult("Bu masa için aktif check-in bulunamadı.");
+
+        // 2) Ödeme alındıysa uncheckin yapılamaz
+        if (reservation.Order != null &&
+            reservation.Order.IsActive &&
+            reservation.Order.IsPaid &&
+            !reservation.Order.IsDeleted)
+        {
+            return new ErrorResult("Ödeme alınmış bir sipariş varken check-in geri alınamaz.");
+        }
+
+        // 3) UnCheckIn işlemi
+        reservation.IsCheckedIn = false;
+        reservation.CheckInAt = null;
+        reservation.UpdateAt = now;
+
+        _repository.Update(reservation);
+
+        // 4) Order varsa pasif yap (silme!)
+        if (reservation.Order != null)
+        {
+            reservation.Order.IsActive = false;
+            reservation.Order.UpdateAt = now;
+
+            _orderDal.Update(reservation.Order);
+        }
+
+        await _unitOfWork.CommitAsync();
+
+        return new SuccessResult("Check-in geri alındı. Masa boş duruma geçti.");
+    }
+
 
     public async Task<int?> GetActiveOrderIdByTableAsync(int tableId)
     {

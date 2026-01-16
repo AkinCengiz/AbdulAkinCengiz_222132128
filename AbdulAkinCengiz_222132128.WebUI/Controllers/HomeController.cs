@@ -35,128 +35,7 @@ public class HomeController : Controller
         _mapper = mapper;
     }
 
-    //// 1) GET: tarih/saat formu + boþ (veya varsayýlan) model
-    //[HttpGet]
-    //public IActionResult Index()
-    //{
-    //    var model = new ReservationPageViewModel()
-    //    {
-    //        Search = new ReservationSearchTableViewModel()
-    //        {
-    //            StartAt = DateTime.Now.AddHours(1),   // varsayýlan
-    //            EndAt = DateTime.Now.AddHours(2),
-    //            GuestCount = 2
-    //        },
-    //        Create = new ReservationCreateViewModel()
-    //        {
-    //            Customer = new CustomerCreateViewModel()
-    //        }
-
-    //    };
-
-    //    return View(model);
-    //}
-
-    //// 2) POST: girilen tarih/saat ve misafir sayýsýna göre uygun masalarý getir
-    //[HttpPost]
-    //public async Task<IActionResult> Index(ReservationSearchTableViewModel model)
-    //{
-    //    if (!ModelState.IsValid)
-    //    {
-    //        // doðrulama hatalarý varsa ayný view'e geri dön
-    //        return View(model);
-    //    }
-
-    //    var result = await _reservationService
-    //        .GetAvailableTablesAsync(model.StartAt, model.EndAt, model.GuestCount);
-
-    //    if (!result.Success)
-    //    {
-    //        ModelState.AddModelError(string.Empty, result.Message);
-    //        return View(model);
-    //    }
-
-    //    model.AvailableTables = result.Data.ToList();
-    //    var response = new ReservationPageViewModel()
-    //    {
-    //        Search = _mapper.Map<ReservationSearchTableViewModel>(result.Data)
-    //    };
-
-    //    return View(response);
-    //}
-
-    //// 3) POST: seçilen masa ve müþteri bilgileriyle rezervasyon oluþtur
-    //[HttpPost]
-    //public async Task<IActionResult> CreateReservation(ReservationCreateViewModel model)
-    //{
-    //    if (!ModelState.IsValid)
-    //    {
-    //        // Hata varsa tekrar ana sayfaya dönebilir, ya da ayrý bir view kullanabilirsin.
-    //        // Basitleþtirmek için Index'e dönüp hata gösterelim:
-    //        var searchModel = new ReservationSearchTableViewModel()
-    //        {
-    //            StartAt = model.StartAt,
-    //            EndAt = model.EndAt,
-    //            GuestCount = model.GuestCount
-    //        };
-
-    //        var availableResult = await _reservationService
-    //            .GetAvailableTablesAsync(model.StartAt, model.EndAt, model.GuestCount);
-
-    //        if (availableResult.Success)
-    //        {
-    //            searchModel.AvailableTables = availableResult.Data.ToList();
-    //        }
-
-    //        return View("Index", searchModel);
-    //    }
-
-    //    // Web tarafýnda ReservationCreateWithCustomerRequestDto kullanarak servise gideriz
-    //    var createModel = new ReservationCreateViewModel()
-    //    {
-    //        TableId = model.TableId,
-    //        StartAt = model.StartAt,
-    //        EndAt = model.EndAt,
-    //        GuestCount = model.GuestCount,
-    //        Customer = new CustomerCreateViewModel()
-    //        {
-    //            FirstName = model.Customer.FirstName,
-    //            LastName = model.Customer.LastName,
-    //            Phone = model.Customer.Phone,
-    //            Email = model.Customer.Email
-    //        }
-    //    };
-
-
-    //    var dto = _mapper.Map<ReservationCreateWithCustomerRequestDto>(createModel);
-    //    var result = await _reservationService.CreateWithCustomerAsync(dto);
-
-    //    if (!result.Success)
-    //    {
-    //        ModelState.AddModelError(string.Empty, result.Message);
-
-    //        // tekrar uygun masalarý yükleyip Index'e dönelim
-    //        var searchModel = new ReservationSearchTableViewModel()
-    //        {
-    //            StartAt = model.StartAt,
-    //            EndAt = model.EndAt,
-    //            GuestCount = model.GuestCount
-    //        };
-
-    //        var availableResult = await _reservationService
-    //            .GetAvailableTablesAsync(model.StartAt, model.EndAt, model.GuestCount);
-
-    //        if (availableResult.Success)
-    //        {
-    //            searchModel.AvailableTables = availableResult.Data.ToList();
-    //        }
-
-    //        return View("Index", searchModel);
-    //    }
-
-    //    TempData["Success"] = "Rezervasyonunuz baþarýyla oluþturuldu.";
-    //    return RedirectToAction(nameof(Index));
-    //}
+    
     [HttpGet]
     public IActionResult Index()
     {
@@ -177,7 +56,6 @@ public class HomeController : Controller
 
         return View(model);
     }
-
     [HttpPost]
     public async Task<IActionResult> Index(ReservationSearchTableViewModel searchModel)
     {

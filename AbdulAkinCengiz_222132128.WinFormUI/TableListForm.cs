@@ -188,29 +188,35 @@ public partial class TableListForm : Form
         MessageBox.Show("Masa açıldı, müşteri alındı.");
     }
 
-    private async void btnGetOrder_Click(object sender, EventArgs e)
+    private void btnTableManagement_Click(object sender, EventArgs e)
     {
-        if (_selected is null)
-        {
-            MessageBox.Show("Lütfen bir masa seçin.");
-            return;
-        }
-
-        var res = await _reservationService.GetOrCreateActiveOrderIdByTableAsync(_selected.TableId);
-        if (!res.Success)
-        {
-            MessageBox.Show(res.Message);
-            return;
-        }
-
-        // Her açılışta yeni scope + yeni form instance
-        using var scope = _serviceProvider.CreateScope();
-        var orderForm = scope.ServiceProvider.GetRequiredService<OrderForm>();
-
-        await orderForm.LoadOrderByIdAndBindUIAsync(res.Data);
-
-        orderForm.ShowDialog(this);
-
+        TableManagementForm form = new TableManagementForm(_tableService);
+        form.ShowDialog();
     }
-    
+
+    //private async void btnGetOrder_Click(object sender, EventArgs e)
+    //{
+    //    if (_selected is null)
+    //    {
+    //        MessageBox.Show("Lütfen bir masa seçin.");
+    //        return;
+    //    }
+
+    //    var res = await _reservationService.GetOrCreateActiveOrderIdByTableAsync(_selected.TableId);
+    //    if (!res.Success)
+    //    {
+    //        MessageBox.Show(res.Message);
+    //        return;
+    //    }
+
+    //    // Her açılışta yeni scope + yeni form instance
+    //    using var scope = _serviceProvider.CreateScope();
+    //    var orderForm = scope.ServiceProvider.GetRequiredService<OrderForm>();
+
+    //    await orderForm.LoadOrderByIdAndBindUIAsync(res.Data);
+
+    //    orderForm.ShowDialog(this);
+
+    //}
+
 }

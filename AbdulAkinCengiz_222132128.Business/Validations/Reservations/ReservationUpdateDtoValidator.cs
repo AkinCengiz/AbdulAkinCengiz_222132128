@@ -46,9 +46,9 @@ public class ReservationUpdateDtoValidator : AbstractValidator<ReservationUpdate
             .WithMessage("Silinmiş rezervasyon aktif olamaz.");
 
         // Güvenlik / iş kuralı (opsiyonel ama önerilir)
-        RuleFor(x => x.IsConfirm)
-            .Must(BeFalseOrManagedBySystem)
-            .WithMessage("Rezervasyon onayı sistem tarafından yönetilir.");
+        //RuleFor(x => x.IsConfirm)
+        //    .Must(BeFalseOrManagedBySystem)
+        //    .WithMessage("Rezervasyon onayı sistem tarafından yönetilir.");
     }
 
     private bool HaveValidDuration(ReservationUpdateRequestDto dto)
