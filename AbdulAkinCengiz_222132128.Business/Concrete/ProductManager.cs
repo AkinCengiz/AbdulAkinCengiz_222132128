@@ -124,7 +124,7 @@ public sealed class ProductManager : IProductService
         try
         {
             var products = _productDal
-                .GetAll(p => !p.IsDeleted && p.IsActive)
+                .GetAll(p => !p.IsDeleted && p.IsActive).Include(p => p.Category)
                 .AsNoTracking()
                 .OrderBy(p => p.Name)
                 .ToList();
@@ -173,7 +173,7 @@ public sealed class ProductManager : IProductService
         try
         {
             var products = _productDal
-                .GetAll(p => !p.IsDeleted && p.IsActive)
+                .GetAll(p => !p.IsDeleted && p.IsActive).Include(p => p.Category)
                 .AsNoTracking()
                 .OrderBy(p => p.Name)
                 .ToList();
@@ -213,7 +213,7 @@ public sealed class ProductManager : IProductService
         {
             // Soft delete / aktif filtreleri sizde varsa ekleyin
             var products = await _productDal
-                .GetAll(p => !p.IsDeleted && p.IsActive && p.CategoryId == categoryId)
+                .GetAll(p => !p.IsDeleted && p.IsActive && p.CategoryId == categoryId).Include(p => p.Category)
                 .AsNoTracking()
                 .OrderBy(p => p.Name)
                 .ToListAsync();
@@ -234,6 +234,42 @@ public sealed class ProductManager : IProductService
             .GetAll(p => !p.IsDeleted && p.IsActive)
             .AsNoTracking()
             .OrderBy(p => p.Name)
+            .ToListAsync();
+
+        var dto = _mapper.Map<List<ProductResponseDto>>(products);
+        return new SuccessDataResult<List<ProductResponseDto>>(dto, ResultMessages.SuccessListed);
+    }
+
+    public async Task<IDataResult<List<ProductResponseDto>>> GetProductsSortedByCategoryAsync()
+    {
+        var products = await _productDal
+            .GetAll(p => !p.IsDeleted && p.IsActive).Include(p => p.Category)
+            .AsNoTracking()
+            .OrderBy(p => p.Category)
+            .ToListAsync();
+
+        var dto = _mapper.Map<List<ProductResponseDto>>(products);
+        return new SuccessDataResult<List<ProductResponseDto>>(dto, ResultMessages.SuccessListed);
+    }
+
+    public async Task<IDataResult<List<ProductResponseDto>>> GetProductsSortedByNameAsync()
+    {
+        var products = await _productDal
+            .GetAll(p => !p.IsDeleted && p.IsActive).Include(p => p.Category)
+            .AsNoTracking()
+            .OrderBy(p => p.Name)
+            .ToListAsync();
+
+        var dto = _mapper.Map<List<ProductResponseDto>>(products);
+        return new SuccessDataResult<List<ProductResponseDto>>(dto, ResultMessages.SuccessListed);
+    }
+
+    public async Task<IDataResult<List<ProductResponseDto>>> GetProductsSortedByPriceAsync()
+    {
+        var products = await _productDal
+            .GetAll(p => !p.IsDeleted && p.IsActive).Include(p => p.Category)
+            .AsNoTracking()
+            .OrderBy(p => p.Price)
             .ToListAsync();
 
         var dto = _mapper.Map<List<ProductResponseDto>>(products);

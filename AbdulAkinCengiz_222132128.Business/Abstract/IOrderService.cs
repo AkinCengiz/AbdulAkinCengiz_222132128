@@ -8,12 +8,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Payment;
 
 namespace AbdulAkinCengiz_222132128.Business.Abstract;
 public interface IOrderService : IGenericService<Order,OrderResponseDto,OrderCreateRequestDto,OrderUpdateRequestDto,OrderDetailResponseDto>
 {
     Task<IDataResult<int>> GetOrCreateActiveOrderByReservationAsync(int reservationId);
-    Task<IResult> SaveItemsAsync(int orderId, IEnumerable<OrderItemCreateRequestDto> items);
+    Task<IDataResult<decimal>> SaveItemsAsync(int orderId, IEnumerable<OrderItemCreateRequestDto> items);
     Task<IDataResult<OrderContextDto>> GetContextAsync(int orderId);
+    Task<IResult> PayAsync(int orderId);
+    Task<IDataResult<OrderPaymentResponseDto>> GetPaymentContextByOrderIdAsync(int orderId);
+
 
 }

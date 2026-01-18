@@ -9,5 +9,5 @@ public sealed record CategoryDetailResponseDto : IDetailDto
     public string Name { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
-    public ProductResponseDto Products { get; set; }
+    public ICollection<ProductResponseDto> Products { get; set; }
 }

@@ -31,7 +31,6 @@
             label1 = new Label();
             btnTableList = new Button();
             btnCreateOrder = new Button();
-            btnGetPaid = new Button();
             btnProductManagement = new Button();
             gbxReport = new GroupBox();
             panel2 = new Panel();
@@ -75,7 +74,7 @@
             btnTableList.BackColor = Color.Blue;
             btnTableList.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnTableList.ForeColor = Color.White;
-            btnTableList.Location = new Point(522, 12);
+            btnTableList.Location = new Point(632, 14);
             btnTableList.Name = "btnTableList";
             btnTableList.Size = new Size(126, 57);
             btnTableList.TabIndex = 1;
@@ -88,7 +87,7 @@
             btnCreateOrder.BackColor = Color.Blue;
             btnCreateOrder.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnCreateOrder.ForeColor = Color.White;
-            btnCreateOrder.Location = new Point(654, 12);
+            btnCreateOrder.Location = new Point(764, 14);
             btnCreateOrder.Name = "btnCreateOrder";
             btnCreateOrder.Size = new Size(126, 57);
             btnCreateOrder.TabIndex = 2;
@@ -96,29 +95,18 @@
             btnCreateOrder.UseVisualStyleBackColor = false;
             btnCreateOrder.Click += btnCreateOrder_Click;
             // 
-            // btnGetPaid
-            // 
-            btnGetPaid.BackColor = Color.Blue;
-            btnGetPaid.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            btnGetPaid.ForeColor = Color.White;
-            btnGetPaid.Location = new Point(786, 12);
-            btnGetPaid.Name = "btnGetPaid";
-            btnGetPaid.Size = new Size(126, 57);
-            btnGetPaid.TabIndex = 3;
-            btnGetPaid.Text = "Ödeme Al";
-            btnGetPaid.UseVisualStyleBackColor = false;
-            // 
             // btnProductManagement
             // 
             btnProductManagement.BackColor = Color.Blue;
             btnProductManagement.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnProductManagement.ForeColor = Color.White;
-            btnProductManagement.Location = new Point(918, 12);
+            btnProductManagement.Location = new Point(896, 14);
             btnProductManagement.Name = "btnProductManagement";
-            btnProductManagement.Size = new Size(175, 57);
+            btnProductManagement.Size = new Size(197, 57);
             btnProductManagement.TabIndex = 4;
             btnProductManagement.Text = "Ürün ve Kategori Yönetimi";
             btnProductManagement.UseVisualStyleBackColor = false;
+            btnProductManagement.Click += btnProductManagement_Click;
             // 
             // gbxReport
             // 
@@ -278,7 +266,7 @@
             btnReservation.BackColor = Color.Blue;
             btnReservation.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnReservation.ForeColor = Color.White;
-            btnReservation.Location = new Point(390, 12);
+            btnReservation.Location = new Point(500, 14);
             btnReservation.Name = "btnReservation";
             btnReservation.Size = new Size(126, 57);
             btnReservation.TabIndex = 7;
@@ -296,7 +284,6 @@
             Controls.Add(gbxReservations);
             Controls.Add(gbxReport);
             Controls.Add(btnProductManagement);
-            Controls.Add(btnGetPaid);
             Controls.Add(btnCreateOrder);
             Controls.Add(btnTableList);
             Controls.Add(label1);
@@ -325,7 +312,6 @@
         private Label label1;
         private Button btnTableList;
         private Button btnCreateOrder;
-        private Button btnGetPaid;
         private Button btnProductManagement;
         private GroupBox gbxReport;
         private Panel panel2;

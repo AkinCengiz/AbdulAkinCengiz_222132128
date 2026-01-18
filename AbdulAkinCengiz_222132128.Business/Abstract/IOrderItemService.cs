@@ -13,5 +13,5 @@ public interface IOrderItemService : IGenericService<OrderItem, OrderItemRespons
 {
     Task<IResult> AddOrIncreaseAsync(int orderId, int productId, byte quantity);
     Task<IDataResult<List<OrderItemResponseDto>>> GetOrderItemsByOrder(int orderId);
-
+    Task<IResult> SaveItemsAsync(int orderId, List<OrderItemCreateRequestDto> items);
 }

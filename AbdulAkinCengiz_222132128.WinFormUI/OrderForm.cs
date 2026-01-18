@@ -5,6 +5,7 @@ using AbdulAkinCengiz_222132128.Entity.Dtos.OrderItem;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Product;
 using AbdulAkinCengiz_222132128.WinFormUI.Util;
 using Core.Utilities.Results;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -25,6 +26,7 @@ public partial class OrderForm : Form
     private readonly IOrderService _orderService;
     private readonly IReservationService _reservationService;
     private readonly ITableService _tableService;
+    private readonly IServiceProvider _serviceProvider;
 
     private int? _selectedCategoryId = null;
     private readonly BindingList<OrderItemRowDto> _orderItems = new();
@@ -37,7 +39,7 @@ public partial class OrderForm : Form
     private int? _lastLoadedTableId = null;
     private int? SelectedReservationId =>
         (cmbReservation.SelectedItem as ComboItem<int?>)?.Value;
-    public OrderForm(ICategoryService categoryService, IProductService productService, IOrderItemService orderItemService, IOrderService orderService, IReservationService reservationService, ITableService tableService)
+    public OrderForm(ICategoryService categoryService, IProductService productService, IOrderItemService orderItemService, IOrderService orderService, IReservationService reservationService, ITableService tableService, IServiceProvider serviceProvider)
     {
         InitializeComponent();
         _categoryService = categoryService;
@@ -46,6 +48,7 @@ public partial class OrderForm : Form
         _orderService = orderService;
         _reservationService = reservationService;
         _tableService = tableService;
+        _serviceProvider = serviceProvider;
         ConfigureGrid();
         ConfigureOrderItemsGrid();
 
@@ -280,6 +283,49 @@ public partial class OrderForm : Form
 
     private async void btnAdd_Click(object sender, EventArgs e)
     {
+        //if (_currentOrderId <= 0)
+        //{
+        //    MessageBox.Show("Önce bir masa/sipariş seçmelisiniz.");
+        //    return;
+        //}
+
+        //if (dgvProducts.CurrentRow?.DataBoundItem is not ProductResponseDto product)
+        //{
+        //    MessageBox.Show("Lütfen bir ürün seçin.");
+        //    return;
+        //}
+
+        //var qty = (byte)nudQuantity.Value;
+        //if (qty <= 0)
+        //{
+        //    MessageBox.Show("Adet 0 olamaz.");
+        //    return;
+        //}
+
+        //// 1) UI’da sepete ekle (varsa adet artır)
+        //var existing = _orderItems.FirstOrDefault(x => x.ProductId == product.Id);
+        //if (existing is null)
+        //    _orderItems.Add(new OrderItemRowDto { ProductId = product.Id, ProductName = product.Name, Quantity = qty, UnitPrice = product.Price });
+        //else
+        //    existing.Quantity += qty;
+
+        //// BindingList -> değişiklik görünmesi için
+        //dgvOrderItems.Refresh();
+
+        //// 2) DB’ye yaz (Business üzerinden)
+        //// Burada kendi servisinizin adını kullanın: IOrderItemService veya IOrderService
+        //var result = await _orderItemService.AddOrIncreaseAsync(_currentOrderId, product.Id, qty);
+
+        //if (!result.Success)
+        //{
+        //    MessageBox.Show(result.Message);
+        //    // İsterseniz başarısızsa UI değişikliğini geri alabilirsiniz.
+        //    return;
+        //}
+
+        //nudQuantity.Value = 1;
+
+        //RecalcTotals(); // ara toplam, kdv, genel toplam label’ları
         if (_currentOrderId <= 0)
         {
             MessageBox.Show("Önce bir masa/sipariş seçmelisiniz.");
@@ -299,30 +345,23 @@ public partial class OrderForm : Form
             return;
         }
 
-        // 1) UI’da sepete ekle (varsa adet artır)
+        // UI sepet: varsa artır, yoksa ekle
         var existing = _orderItems.FirstOrDefault(x => x.ProductId == product.Id);
         if (existing is null)
-            _orderItems.Add(new OrderItemRowDto { ProductId = product.Id, ProductName = product.Name, Quantity = qty, UnitPrice = product.Price });
+            _orderItems.Add(new OrderItemRowDto
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                Quantity = qty,
+                UnitPrice = product.Price
+            });
         else
             existing.Quantity += qty;
 
-        // BindingList -> değişiklik görünmesi için
         dgvOrderItems.Refresh();
 
-        // 2) DB’ye yaz (Business üzerinden)
-        // Burada kendi servisinizin adını kullanın: IOrderItemService veya IOrderService
-        var result = await _orderItemService.AddOrIncreaseAsync(_currentOrderId, product.Id, qty);
-
-        if (!result.Success)
-        {
-            MessageBox.Show(result.Message);
-            // İsterseniz başarısızsa UI değişikliğini geri alabilirsiniz.
-            return;
-        }
-
         nudQuantity.Value = 1;
-
-        RecalcTotals(); // ara toplam, kdv, genel toplam label’ları
+        RecalcTotals();
     }
     private void RecalcTotals()
     {
@@ -504,16 +543,20 @@ public partial class OrderForm : Form
             UnitPrice = x.UnitPrice
         }).ToList();
 
+        // 🔴 BU SATIR
         var result = await _orderService.SaveItemsAsync(_currentOrderId, dtoList);
+
         if (!result.Success)
         {
             MessageBox.Show(result.Message);
             return;
         }
 
+        // 🔴 TOTAL ARTIK BACKEND'DEN GELİYOR
+        lblTotal.Text = $"{result.Data:N2} ₺";
+
         MessageBox.Show("Sipariş kaydedildi.");
-        this.Close();
-        //await LoadOrderAsync(_currentOrderId); // DB’den tekrar oku (senkron)
+        this.Close();   // kapatmak istemiyorsanız kaldırabilirsiniz
     }
     public async Task LoadOrderByIdAndBindUIAsync(int orderId)
     {
@@ -565,4 +608,67 @@ public partial class OrderForm : Form
         }
     }
 
+    private void btnRemove_Click(object sender, EventArgs e)
+    {
+        if (_currentOrderId <= 0)
+        {
+            MessageBox.Show("Önce bir masa/sipariş seçmelisiniz.");
+            return;
+        }
+
+        if (dgvOrderItems.CurrentRow?.DataBoundItem is not OrderItemRowDto row)
+        {
+            MessageBox.Show("Lütfen sepetten bir ürün seçin.");
+            return;
+        }
+
+        // Kaç adet düşülecek? (aynı nudQuantity’yi kullanmak istiyorsanız)
+        var dec = (byte)nudQuantity.Value;
+        if (dec <= 0)
+        {
+            MessageBox.Show("Adet 0 olamaz.");
+            return;
+        }
+
+        // Sepetteki item'ı bul (DataBoundItem zaten referans olabilir ama garantiye alalım)
+        var existing = _orderItems.FirstOrDefault(x => x.ProductId == row.ProductId);
+        if (existing is null)
+        {
+            MessageBox.Show("Seçilen ürün sepette bulunamadı.");
+            return;
+        }
+
+        // Adet düş
+        if (dec >= existing.Quantity)
+        {
+            // 0 veya altına düşüyorsa tamamen kaldır
+            _orderItems.Remove(existing);
+        }
+        else
+        {
+            existing.Quantity -= dec;
+        }
+
+        dgvOrderItems.Refresh();
+        nudQuantity.Value = 1;
+        RecalcTotals();
+    }
+
+    private void btnGoPay_Click(object sender, EventArgs e)
+    {
+        if (SelectedReservationId <= 0 || SelectedReservationId == null)
+        {
+            MessageBox.Show("Önce bir rezervasyon seçmelisiniz.");
+            var orderPaymentForm = _serviceProvider.GetRequiredService<OrderPaymentForm>();
+            orderPaymentForm.ShowDialog();
+        }
+        else
+        {
+            var paymentForm = _serviceProvider.GetRequiredService<PaymentForm>();
+            paymentForm.SetOrder(SelectedReservationId.Value);
+            paymentForm.ShowDialog();
+        }
+
+            
+    }
 }

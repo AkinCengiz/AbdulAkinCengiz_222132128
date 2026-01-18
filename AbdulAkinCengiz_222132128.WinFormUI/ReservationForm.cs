@@ -117,6 +117,30 @@ public partial class ReservationForm : Form
             MessageBox.Show(ex.Message);
         }
     }
+    private async Task GetByDateReservation(DateTime date)
+    {
+        //var data = _reservationService.GetTodayReservationAsync();
+        //dgvReservations.DataSource = data.Result.Data;
+        try
+        {
+            var result = await _reservationService.GetReservationsByDateAsync(date);
+
+            if (!result.Success)
+            {
+                MessageBox.Show(result.Message);
+                return;
+            }
+
+            //dgvReservations.AutoGenerateColumns = false; // kolonları siz yönetiyorsanız
+            var list = result.Data.ToList();
+            dgvReservations.DataSource = list;
+            //lblReservationCount.Text = list.Count.ToString();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message);
+        }
+    }
 
     private async Task<ReservationFormResponseDto> FormLoadData()
     {
@@ -251,6 +275,7 @@ public partial class ReservationForm : Form
 
             // Rezervasyonları yenile
             await GetReservation();
+            
 
             // Uygun masa listesini yenile
             await SearchAvailableTables();
@@ -264,6 +289,8 @@ public partial class ReservationForm : Form
     private async void btnCreateReservation_Click(object sender, EventArgs e)
     {
         await CreateReservation();
+        //this.DialogResult = DialogResult.OK; 
+        //this.Close();
     }
 
     private async void cmbTables_SelectedIndexChanged(object sender, EventArgs e)
@@ -303,4 +330,14 @@ public partial class ReservationForm : Form
         _ = GetReservation();
     }
 
+    private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
+    {
+        DateTime dateInfo = dateTimePicker1.Value;
+        _ = GetByDateReservation(dateInfo);
+    }
+
+    private void btnGetList_Click(object sender, EventArgs e)
+    {
+        dateTimePicker1.Value = DateTime.Now;
+    }
 }

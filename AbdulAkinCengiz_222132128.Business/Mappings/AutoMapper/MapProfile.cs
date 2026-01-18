@@ -26,9 +26,9 @@ public class MapProfile : Profile
         CreateMap<AppUserRegisterRequestDto, AppUser>();
 
         CreateMap<Category, CategoryResponseDto>();
-        CreateMap<Category, CategoryDetailResponseDto>();
+        CreateMap<Category, CategoryDetailResponseDto>().ReverseMap();
         CreateMap<CategoryCreateRequestDto, Category>();
-        CreateMap<CategoryUpdateRequestDto, Category>();
+        CreateMap<CategoryUpdateRequestDto, Category>().ReverseMap();
 
         CreateMap<Customer, CustomerResponseDto>();
         CreateMap<Customer, CustomerDetailResponseDto>();

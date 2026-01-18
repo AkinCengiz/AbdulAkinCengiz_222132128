@@ -23,4 +23,6 @@ public interface IReservationService : IGenericService<Reservation,ReservationRe
     Task<IDataResult<List<ReservationResponseDto>>> GetReservationsByTableIdAsync(int tableId);
 
     Task<IResult> UnCheckInByTableAsync(int tableId);
+    Task<IDataResult<List<ReservationResponseDto>>> GetReservationsByDateAsync(DateTime date);
+    Task<IDataResult<ReservationDetailResponseDto>> GetDetailedCompletedReservationsByOrderAsync(int orderId);
 }

@@ -49,6 +49,10 @@ public partial class ReservationActionForm : Form
         var r = result.Data;
 
         _tableId = r.Table.Id;
+        cmbTables.DataSource = new List<TableResponseDto> { r.Table };
+        cmbTables.DisplayMember = "Name";
+        cmbTables.ValueMember = "Id";
+        //cmbTables.SelectedValue = _tableId;
 
         // ---- FORM ALANLARINA DOLDUR ----
         txtFirstName.Text = r.Customer.FirstName;
@@ -60,6 +64,7 @@ public partial class ReservationActionForm : Form
         dtpStartDate.Value = r.StartAt;
         dtpEndDate.Value = r.EndAt;
         nudGuestCount.Value = r.GuestCount;
+        cmbTables.SelectedValue = _tableId;
     }
 
     private async void btnConfirm_Click(object sender, EventArgs e)

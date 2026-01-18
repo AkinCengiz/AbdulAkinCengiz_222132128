@@ -136,30 +136,29 @@ public sealed class ReservationManager : IReservationService
             return new ErrorResult("Geçersiz masa.");
 
         var now = DateTime.Now;
+        var today = now.Date;
+        var tomorrow = today.AddDays(1);
 
-        // 1) Masa dolu mu?
-        // Yani: Bu masaya bağlı, check-in yapılmış ve ödenmemiş bir sipariş var mı?
-        var isBusy = await _repository.GetAll(r =>
-                r.TableId == tableId &&
-                r.IsCheckedIn &&
-                r.IsActive &&
-                !r.IsDeleted)
-            .AnyAsync(r =>
-                r.Order != null &&
-                r.Order.IsActive &&
-                !r.Order.IsPaid &&
-                !r.Order.IsDeleted);
+        // 1) Masa dolu mu? (EN SAĞLAM: Order üzerinden kontrol)
+        // Bu masada check-in yapılmış rezervasyona bağlı, aktif ve ödenmemiş sipariş var mı?
+        var isBusy = await _orderDal.GetAll(o =>
+                !o.IsDeleted && o.IsActive && !o.IsPaid &&
+                o.Reservation.TableId == tableId &&
+                o.Reservation.IsCheckedIn &&
+                o.Reservation.IsActive && !o.Reservation.IsDeleted)
+            .AnyAsync();
 
         if (isBusy)
             return new ErrorResult("Masa zaten dolu. Check-in yapılamaz.");
 
-        // 2) Bu masanın check-in yapılmamış en yakın rezervasyonu
+        // 2) Bu masanın check-in yapılmamış en yakın ONAYLI rezervasyonu (bugün için)
         var reservation = await _repository.GetAll(r =>
                 r.TableId == tableId &&
                 r.IsConfirm &&
                 r.IsActive &&
                 !r.IsDeleted &&
-                !r.IsCheckedIn)
+                !r.IsCheckedIn &&
+                r.StartAt >= today && r.StartAt < tomorrow) // ✅ bugünün rezervasyonları
             .OrderBy(r => r.StartAt)
             .FirstOrDefaultAsync();
 
@@ -169,13 +168,19 @@ public sealed class ReservationManager : IReservationService
         // 3) Check-in
         reservation.IsCheckedIn = true;
         reservation.CheckInAt = now;
-
-        reservation.IsConfirm = true;
         reservation.UpdateAt = now;
-        _repository.Update(reservation);
 
-        // 4) Eğer bu rezervasyona ait Order yoksa oluştur
-        if (reservation.Order == null)
+        _repository.Update(reservation);
+        await _unitOfWork.CommitAsync();
+
+        // 4) Bu rezervasyona ait aktif order var mı? (navigation'a güvenme)
+        var existingOrderId = await _orderDal.GetAll(o =>
+                o.ReservationId == reservation.Id &&
+                o.IsActive && !o.IsDeleted && !o.IsPaid)
+            .Select(o => (int?)o.Id)
+            .FirstOrDefaultAsync();
+
+        if (!existingOrderId.HasValue)
         {
             var order = new Order
             {
@@ -183,17 +188,28 @@ public sealed class ReservationManager : IReservationService
                 IsActive = true,
                 IsDeleted = false,
                 IsPaid = false,
+                Total = 0m,
                 CreateAt = now
             };
 
             await _orderDal.AddAsync(order);
             await _unitOfWork.CommitAsync();
+
+            existingOrderId = order.Id;
         }
 
-        await _unitOfWork.CommitAsync();
+        // 5) (Sizin isteğiniz) Reservation.OrderId mirror doldur
+        if (reservation.OrderId != existingOrderId.Value)
+        {
+            reservation.OrderId = existingOrderId.Value;
+            reservation.UpdateAt = now;
+            _repository.Update(reservation);
+            await _unitOfWork.CommitAsync();
+        }
 
         return new SuccessResult("Check-in yapıldı. Masa dolu duruma geçti.");
     }
+
     public async Task<IResult> UnCheckInByTableAsync(int tableId)
     {
         if (tableId <= 0)
@@ -241,6 +257,55 @@ public sealed class ReservationManager : IReservationService
         await _unitOfWork.CommitAsync();
 
         return new SuccessResult("Check-in geri alındı. Masa boş duruma geçti.");
+    }
+
+    public async Task<IDataResult<List<ReservationResponseDto>>> GetReservationsByDateAsync(DateTime date)
+    {
+        var reservatios = await _repository.GetAll(r => !r.IsDeleted && r.StartAt.Date == date.Date).Select(r => 
+            new ReservationResponseDto()
+            {
+                Id = r.Id,
+                StartAt = r.StartAt,
+                EndAt = r.EndAt,
+                GuestCount = r.GuestCount,
+                IsConfirm = r.IsConfirm,
+                Table = new TableResponseDto
+                {
+                    Id = r.Table.Id,
+                    Name = r.Table.Name,
+                    Seats = r.Table.Seats,
+                },
+                Customer = new CustomerResponseDto
+                {
+                    Id = r.Customer.Id,
+                    FirstName = r.Customer.FirstName,
+                    LastName = r.Customer.LastName,
+                    Phone = r.Customer.Phone,
+                }
+            }).ToListAsync();
+
+        var dto = _mapper.Map<List<ReservationResponseDto>>(reservatios);
+
+        return new SuccessDataResult<List<ReservationResponseDto>>(dto, ResultMessages.SuccessListed);
+    }
+
+    public async Task<IDataResult<ReservationDetailResponseDto>> GetDetailedCompletedReservationsByOrderAsync(int orderId)
+    {
+        var entity = await _repository.GetAll()
+            .Include(r => r.Table)
+            .Include(r => r.Customer)
+            .Include(r => r.Order)
+            .ThenInclude(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .Where(r => r.OrderId == orderId && r.Order.IsPaid).FirstOrDefaultAsync();
+
+        if (entity is null)
+        {
+            return new ErrorDataResult<ReservationDetailResponseDto>(ResultMessages.NotFound);
+        }
+
+        var dto = _mapper.Map<ReservationDetailResponseDto>(entity);
+        return new SuccessDataResult<ReservationDetailResponseDto>(dto, ResultMessages.SuccessListed);
     }
 
 
@@ -391,38 +456,53 @@ public sealed class ReservationManager : IReservationService
     {
         await _updateValidator.ValidateAndThrowAsync(dto);
 
-        var reservation = await _repository.GetAsync(r => r.Id == dto.Id);
+        var reservation = await _repository.GetAll(r => r.Id == dto.Id)
+            .Include(r => r.Order)
+            .FirstOrDefaultAsync();
+
         if (reservation is null)
-        {
             return new ErrorResult(ResultMessages.NotFound);
+
+        var now = DateTime.Now;
+
+        // ✅ AKTİF SİPARİŞ VARSA GÜNCELLEME YOK
+        if (reservation.Order != null &&
+            reservation.Order.IsActive &&
+            !reservation.Order.IsDeleted &&
+            !reservation.Order.IsPaid)
+        {
+            return new ErrorResult("Bu rezervasyona ait aktif sipariş bulunduğu için güncelleme yapılamaz.");
         }
 
+        // ✅ CHECK-IN YAPILDIYSA GÜNCELLEME YOK
+        if (reservation.IsCheckedIn)
+            return new ErrorResult("Check-in yapılmış rezervasyon güncellenemez.");
+
+        // ✅ BAŞLAMIŞSA (STARTAT GEÇTİYSE) GÜNCELLEME YOK
+        if (reservation.EndAt <= now)
+            return new ErrorResult("Başlamış rezervasyon güncellenemez.");
+
+        // --- Bundan sonrası sizdeki mevcut kontroller ---
         var table = await _tableDal.GetAsync(t => t.Id == dto.TableId);
         if (table is null)
-        {
             return new ErrorResult(ResultMessages.NotFound);
-        }
 
         if (dto.GuestCount > table.Seats)
-        {
             return new ErrorResult("Misafir sayısı için masa kapasitesi yetersiz...");
-        }
 
-        // aynı masa için, kendi kaydı hariç overlap kontrolü
         var hasOverlap = await _repository.GetAll()
             .Where(r => r.TableId == table.Id && r.IsActive && !r.IsDeleted && r.Id != dto.Id)
             .AnyAsync(r => r.StartAt < dto.EndAt && r.EndAt > dto.StartAt);
 
         if (hasOverlap)
-        {
             return new ErrorResult("Seçilen tarih ve saat aralığında masa dolu...");
-        }
 
         reservation.StartAt = dto.StartAt;
         reservation.EndAt = dto.EndAt;
         reservation.GuestCount = dto.GuestCount;
         reservation.TableId = dto.TableId;
         reservation.IsConfirm = dto.IsConfirm;
+        reservation.UpdateAt = now;
 
         _repository.Update(reservation);
 
@@ -487,18 +567,21 @@ public sealed class ReservationManager : IReservationService
 
     public async Task<IDataResult<ReservationDetailResponseDto>> GetDetailByIdAsync(int id)
     {
-        var entity = await _repository.GetAll()
-            .Include(r => r.Table)
-            .Include(r => r.Customer)
-            .Where(r => r.Id == id).FirstOrDefaultAsync();
+            var entity = await _repository.GetAll()
+                .Include(r => r.Table)
+                .Include(r => r.Customer)
+                .Include(r => r.Order)
+                .ThenInclude(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .Where(r => r.Id == id).FirstOrDefaultAsync();
 
-        if (entity is null)
-        {
-            return new ErrorDataResult<ReservationDetailResponseDto>(ResultMessages.NotFound);
-        }
+            if (entity is null)
+            {
+                return new ErrorDataResult<ReservationDetailResponseDto>(ResultMessages.NotFound);
+            }
 
-        var dto = _mapper.Map<ReservationDetailResponseDto>(entity);
-        return new SuccessDataResult<ReservationDetailResponseDto>(dto, ResultMessages.SuccessListed);
+            var dto = _mapper.Map<ReservationDetailResponseDto>(entity);
+            return new SuccessDataResult<ReservationDetailResponseDto>(dto, ResultMessages.SuccessListed);
     }
 
     public async Task<IDataResult<IEnumerable<ReservationDetailResponseDto>>> GetDetailAllAsync()

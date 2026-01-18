@@ -32,8 +32,8 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -104,7 +104,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Seats = table.Column<byte>(type: "tinyint", nullable: false),
-                    IsReserve = table.Column<bool>(type: "bit", nullable: false),
                     CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdateAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -257,8 +256,11 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                     EndAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     GuestCount = table.Column<byte>(type: "tinyint", nullable: false),
                     IsConfirm = table.Column<bool>(type: "bit", nullable: false),
+                    IsCheckedIn = table.Column<bool>(type: "bit", nullable: false),
+                    CheckInAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     TableId = table.Column<int>(type: "int", nullable: false),
                     CustomerId = table.Column<int>(type: "int", nullable: false),
+                    OrderId = table.Column<int>(type: "int", nullable: true),
                     CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdateAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -288,7 +290,7 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ReservationId = table.Column<int>(type: "int", nullable: false),
-                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false, defaultValue: 0.0m),
                     IsPaid = table.Column<bool>(type: "bit", nullable: false),
                     CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdateAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -431,7 +433,8 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_ReservationId",
                 table: "Orders",
-                column: "ReservationId");
+                column: "ReservationId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_OrderId",

@@ -117,14 +117,14 @@ public sealed class OrderItemManager : IOrderItemService
 
     public async Task<IDataResult<IEnumerable<OrderItemResponseDto>>> GetAllAsync()
     {
-        var entity = _orderItemDal.GetAll(o => !o.IsDeleted).OrderBy(o => o.OrderId).ToListAsync();
+        var entity = await _orderItemDal.GetAll(o => !o.IsDeleted).OrderBy(o => o.OrderId).ToListAsync();
         var dto = _mapper.Map<IEnumerable<OrderItemResponseDto>>(entity);
         return new SuccessDataResult<IEnumerable<OrderItemResponseDto>>(dto, ResultMessages.SuccessGet);
     }
 
     public async Task<IDataResult<IEnumerable<OrderItemResponseDto>>> GetAllDeletedAsync()
     {
-        var entity = await _orderItemDal.GetAll(oi => !oi.IsDeleted).OrderBy(oi => oi.OrderId).ToListAsync();
+        var entity = await _orderItemDal.GetAll(oi => oi.IsDeleted).OrderBy(oi => oi.OrderId).ToListAsync();
         var dto = _mapper.Map<IEnumerable<OrderItemResponseDto>>(entity);
         return new SuccessDataResult<IEnumerable<OrderItemResponseDto>>(dto, ResultMessages.SuccessGet);
     }
@@ -208,4 +208,126 @@ public sealed class OrderItemManager : IOrderItemService
         var dto = _mapper.Map<List<OrderItemResponseDto>>(orderItems);
         return new SuccessDataResult<List<OrderItemResponseDto>>(dto,ResultMessages.SuccessListed);
     }
+    public async Task<IResult> SaveItemsAsync(int orderId, List<OrderItemCreateRequestDto> items)
+    {
+        if (orderId <= 0)
+            return new ErrorResult("Geçersiz sipariş.");
+
+        items ??= new List<OrderItemCreateRequestDto>();
+
+        // Order kontrolü
+        var order = await _orderDal.GetAsync(o => o.Id == orderId && !o.IsDeleted && o.IsActive && !o.IsPaid);
+        if (order is null)
+            return new ErrorResult("Aktif sipariş bulunamadı.");
+
+        // Aynı ürün birden fazla geldiyse birleştir
+        var incoming = items
+            .Where(x => x.ProductId > 0 && x.Quantity > 0)
+            .GroupBy(x => x.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                Quantity = g.Sum(i => (int)i.Quantity),
+                UnitPrice = g.Last().UnitPrice // fiyat politikanıza göre değişebilir
+            })
+            .ToDictionary(x => x.ProductId, x => x);
+
+        // DB mevcut kalemler (aktif, silinmemiş)
+        var dbItems = await _orderItemDal.GetAll(oi => oi.OrderId == orderId && !oi.IsDeleted && oi.IsActive)
+            .ToListAsync();
+
+        var dbByProductId = dbItems.ToDictionary(x => x.ProductId, x => x);
+
+        // İşlem görecek tüm productId’ler
+        var allProductIds = incoming.Keys.Union(dbByProductId.Keys).ToList();
+
+        // İlgili ürünleri çek
+        var products = await _productDal.GetAll(p => allProductIds.Contains(p.Id) && !p.IsDeleted && p.IsActive)
+            .ToListAsync();
+        var productById = products.ToDictionary(p => p.Id, p => p);
+
+        // Stok doğrulama: net düşüş gereken ürünleri hesapla
+        // net = incomingQty - dbQty; pozitifse stoktan düşülecek
+        foreach (var pid in allProductIds)
+        {
+            incoming.TryGetValue(pid, out var inc);
+            dbByProductId.TryGetValue(pid, out var db);
+
+            var incomingQty = inc?.Quantity ?? 0;
+            var dbQty = db?.Quantity ?? 0;
+
+            var netDecrease = incomingQty - dbQty;
+            if (netDecrease > 0)
+            {
+                if (!productById.TryGetValue(pid, out var pr))
+                    return new ErrorResult("Ürün bulunamadı.");
+
+                if (pr.Stock < netDecrease)
+                    return new ErrorResult($"Yetersiz stok: {pr.Name}");
+            }
+        }
+
+        // Delta uygula: Insert/Update/Delete + stok güncelle
+        foreach (var pid in allProductIds)
+        {
+            incoming.TryGetValue(pid, out var inc);
+            dbByProductId.TryGetValue(pid, out var db);
+
+            var incomingQty = inc?.Quantity ?? 0;
+            var dbQty = db?.Quantity ?? 0;
+
+            var net = incomingQty - dbQty; // + ise düş, - ise iade et
+
+            // Stok güncelle
+            if (net != 0)
+            {
+                var pr = productById[pid];
+                pr.Stock -= net; // net pozitifse düşer, negatifse artar
+                _productDal.Update(pr);
+            }
+
+            // DB kalem senkronu
+            if (db is null)
+            {
+                // DB’de yok, UI’da varsa -> insert
+                if (incomingQty > 0)
+                {
+                    var newItem = new OrderItem
+                    {
+                        OrderId = orderId,
+                        ProductId = pid,
+                        Quantity = (byte)incomingQty,
+                        UnitPrice = inc.UnitPrice,
+                        IsActive = true,
+                        IsDeleted = false,
+                        CreateAt = DateTime.Now
+                    };
+                    await _orderItemDal.AddAsync(newItem);
+                }
+            }
+            else
+            {
+                if (incomingQty <= 0)
+                {
+                    // UI’da yok -> soft delete
+                    db.IsDeleted = true;
+                    db.IsActive = false;
+                    db.UpdateAt = DateTime.Now;
+                    _orderItemDal.Update(db);
+                }
+                else
+                {
+                    // UI’da var -> update
+                    db.Quantity = (byte)incomingQty;
+                    db.UnitPrice = inc.UnitPrice;
+                    db.UpdateAt = DateTime.Now;
+                    _orderItemDal.Update(db);
+                }
+            }
+        }
+
+        await _unitOfWork.CommitAsync();
+        return new SuccessResult("Sipariş kalemleri kaydedildi.");
+    }
+
 }

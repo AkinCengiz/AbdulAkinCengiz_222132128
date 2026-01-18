@@ -121,7 +121,7 @@ public sealed class CategoryManager : ICategoryService
 
     public async Task<IDataResult<IEnumerable<CategoryResponseDto>>> GetAllAsync()
     {
-        var categories = await _repository.GetAll(c => !c.IsDeleted).ToListAsync();
+        var categories = await _repository.GetAll(c => !c.IsDeleted).OrderBy(c => c.Name).ToListAsync();
 
         var dto = _mapper.Map<IEnumerable<CategoryResponseDto>>(categories);
 

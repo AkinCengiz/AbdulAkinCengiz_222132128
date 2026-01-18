@@ -12,6 +12,7 @@ public sealed record OrderResponseDto : IResponseDto
 {
     public int Id { get; set; }
     public int ReservationId { get; set; }
+    public Concrete.Reservation Reservation { get; set; }
     public IReadOnlyCollection<OrderItemResponseDto>? OrderItems { get; set; }
     public decimal Total { get; set; }
     public bool IsPaid { get; set; }

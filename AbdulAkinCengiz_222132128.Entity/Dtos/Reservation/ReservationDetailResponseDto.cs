@@ -1,4 +1,5 @@
 ﻿using AbdulAkinCengiz_222132128.Entity.Dtos.Customer;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Order;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Table;
 using Core.Entity;
 
@@ -13,6 +14,7 @@ public sealed record ReservationDetailResponseDto : IDetailDto
     public bool IsConfirm { get; set; }
     public TableResponseDto Table { get; set; }
     public CustomerResponseDto Customer { get; set; }
+    public OrderResponseDto Order { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreateAt { get; set; }

@@ -14,7 +14,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Ident
 {
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.Entity<Order>().HasOne(o => o.Reservation).WithOne(r => r.Order).HasForeignKey<Reservation>(r => r.OrderId);
+        builder.Entity<Order>()
+            .HasOne(o => o.Reservation)
+            .WithOne(r => r.Order)
+            .HasForeignKey<Order>(o => o.ReservationId);
+
+        builder.Entity<Reservation>()
+            .Property(r => r.OrderId)
+            .IsRequired(false); 
+
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         base.OnModelCreating(builder);
     }

@@ -80,6 +80,7 @@ partial class OrderForm
         btnGoPay.TabIndex = 8;
         btnGoPay.Text = "Ödeme Ekranına Geç";
         btnGoPay.UseVisualStyleBackColor = false;
+        btnGoPay.Click += btnGoPay_Click;
         // 
         // btnSaveOrder
         // 
@@ -322,6 +323,7 @@ partial class OrderForm
         btnRemove.TabIndex = 3;
         btnRemove.Text = "SİL";
         btnRemove.UseVisualStyleBackColor = false;
+        btnRemove.Click += btnRemove_Click;
         // 
         // btnAdd
         // 

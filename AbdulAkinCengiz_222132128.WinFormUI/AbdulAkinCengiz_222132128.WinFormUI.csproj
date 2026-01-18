@@ -31,6 +31,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.11" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3650.58" />
+    <PackageReference Include="PdfSharpCore" Version="1.3.67" />
   </ItemGroup>
 
   <ItemGroup>

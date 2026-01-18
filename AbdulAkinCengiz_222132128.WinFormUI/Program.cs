@@ -122,5 +122,10 @@ internal static class Program
         services.AddTransient<ReservationForm>();
         services.AddTransient<ReservationActionForm>();
         services.AddTransient<TableManagementForm>();
+        services.AddTransient<ProductAndCategoryManagementForm>();
+        services.AddTransient<CategoryCreateForm>();
+        services.AddTransient<CategoryUpdateForm>();
+        services.AddTransient<PaymentForm>();
+        services.AddTransient<OrderPaymentForm>();
     }
 }

@@ -284,6 +284,9 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ReservationId")
+                        .IsUnique();
+
                     b.ToTable("Orders");
                 });
 
@@ -462,10 +465,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("OrderId")
-                        .IsUnique()
-                        .HasFilter("[OrderId] IS NOT NULL");
-
                     b.HasIndex("TableId");
 
                     b.ToTable("Reservations");
@@ -637,6 +636,17 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Order", b =>
+                {
+                    b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Reservation", "Reservation")
+                        .WithOne("Order")
+                        .HasForeignKey("AbdulAkinCengiz_222132128.Entity.Concrete.Order", "ReservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reservation");
+                });
+
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.OrderItem", b =>
                 {
                     b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Order", "Order")
@@ -686,10 +696,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Order", "Order")
-                        .WithOne("Reservation")
-                        .HasForeignKey("AbdulAkinCengiz_222132128.Entity.Concrete.Reservation", "OrderId");
-
                     b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Table", "Table")
                         .WithMany("Reservations")
                         .HasForeignKey("TableId")
@@ -697,8 +703,6 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
-
-                    b.Navigation("Order");
 
                     b.Navigation("Table");
                 });
@@ -767,8 +771,11 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Order", b =>
                 {
                     b.Navigation("OrderItems");
+                });
 
-                    b.Navigation("Reservation")
+            modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Reservation", b =>
+                {
+                    b.Navigation("Order")
                         .IsRequired();
                 });
 

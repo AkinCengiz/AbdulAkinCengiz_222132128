@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251221180728_updateTablesEntity")]
-    partial class updateTablesEntity
+    [Migration("20260118153946_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -287,7 +287,8 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReservationId");
+                    b.HasIndex("ReservationId")
+                        .IsUnique();
 
                     b.ToTable("Orders");
                 });
@@ -424,6 +425,9 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("CheckInAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("datetime2");
 
@@ -439,11 +443,17 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsCheckedIn")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsConfirm")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("StartAt")
                         .HasColumnType("datetime2");
@@ -632,8 +642,8 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Order", b =>
                 {
                     b.HasOne("AbdulAkinCengiz_222132128.Entity.Concrete.Reservation", "Reservation")
-                        .WithMany()
-                        .HasForeignKey("ReservationId")
+                        .WithOne("Order")
+                        .HasForeignKey("AbdulAkinCengiz_222132128.Entity.Concrete.Order", "ReservationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -764,6 +774,12 @@ namespace AbdulAkinCengiz_222132128.DataAccess.Migrations
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Order", b =>
                 {
                     b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Reservation", b =>
+                {
+                    b.Navigation("Order")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("AbdulAkinCengiz_222132128.Entity.Concrete.Table", b =>

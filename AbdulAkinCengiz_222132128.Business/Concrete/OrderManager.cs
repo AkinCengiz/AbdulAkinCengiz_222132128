@@ -1,10 +1,15 @@
 ﻿using AbdulAkinCengiz_222132128.Business.Abstract;
 using AbdulAkinCengiz_222132128.DataAccess.Abstract;
+using AbdulAkinCengiz_222132128.DataAccess.Concrete.EntityFramework;
 using AbdulAkinCengiz_222132128.Entity.Concrete;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Category;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Customer;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Order;
 using AbdulAkinCengiz_222132128.Entity.Dtos.OrderItem;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Payment;
 using AbdulAkinCengiz_222132128.Entity.Dtos.Product;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Reservation;
+using AbdulAkinCengiz_222132128.Entity.Dtos.Table;
 using AutoMapper;
 using Core.Business.Constants;
 using Core.UnitOfWorks;
@@ -22,8 +27,10 @@ public sealed class OrderManager : IOrderService
     private readonly IValidator<OrderUpdateRequestDto> _updateValidator;
     private readonly IOrderItemDal _orderItemDal;
     private readonly IProductDal _productDal;
+    private readonly IReservationDal _reservationDal;
+    private const decimal VatRate = 0.08m;
 
-    public OrderManager(IOrderDal orderDal, IUnitOfWork unitOfWork, IMapper mapper, IValidator<OrderCreateRequestDto> createValidator, IValidator<OrderUpdateRequestDto> updateValidator, IOrderItemDal orderItemDal, IProductDal productDal)
+    public OrderManager(IOrderDal orderDal, IUnitOfWork unitOfWork, IMapper mapper, IValidator<OrderCreateRequestDto> createValidator, IValidator<OrderUpdateRequestDto> updateValidator, IOrderItemDal orderItemDal, IProductDal productDal, IReservationDal reservationDal)
     {
         _orderDal = orderDal;
         _unitOfWork = unitOfWork;
@@ -32,6 +39,7 @@ public sealed class OrderManager : IOrderService
         _updateValidator = updateValidator;
         _orderItemDal = orderItemDal;
         _productDal = productDal;
+        _reservationDal = reservationDal;
     }
 
     public async Task<IDataResult<OrderResponseDto>> AddAsync(OrderCreateRequestDto dto)
@@ -109,29 +117,32 @@ public sealed class OrderManager : IOrderService
             return new ErrorDataResult<OrderResponseDto>("Geçersiz sipariş.");
 
         var order = await _orderDal.GetAll(o => o.Id == id && !o.IsDeleted)
-            .Include(o => o.Reservation)
+            .Include(o => o.Reservation).ThenInclude(r => r.Table)
             .Include(o => o.OrderItems)
-            .ThenInclude(i => i.Product)
-            .ThenInclude(p => p.Category)
+                .ThenInclude(i => i.Product)
+                    .ThenInclude(p => p.Category)
             .AsNoTracking()
             .Select(o => new OrderResponseDto
             {
                 Id = o.Id,
                 ReservationId = o.ReservationId,
                 IsPaid = o.IsPaid,
+
+                Total = o.Total,
+
                 OrderItems = o.OrderItems
                     .Where(i => !i.IsDeleted)
                     .Select(i => new OrderItemResponseDto
                     {
                         Id = i.Id,
                         ProductId = i.ProductId,
-                        Product = new ProductResponseDto()
+                        Product = new ProductResponseDto
                         {
                             Id = i.Product.Id,
                             Name = i.Product.Name,
                             Price = i.Product.Price,
                             Stock = i.Product.Stock,
-                            Category = new CategoryResponseDto()
+                            Category = new CategoryResponseDto
                             {
                                 Id = i.Product.Category.Id,
                                 Name = i.Product.Category.Name
@@ -148,8 +159,12 @@ public sealed class OrderManager : IOrderService
         if (order == null)
             return new ErrorDataResult<OrderResponseDto>("Sipariş bulunamadı.");
 
+        // ✅ ekstra güvenlik: OrderItems null ise boş liste yap
+        order.OrderItems ??= new List<OrderItemResponseDto>();
+
         return new SuccessDataResult<OrderResponseDto>(order, ResultMessages.SuccessGet);
     }
+
 
     public async Task<IDataResult<IEnumerable<OrderResponseDto>>> GetAllAsync()
     {
@@ -192,6 +207,8 @@ public sealed class OrderManager : IOrderService
         if (reservationId <= 0)
             return new ErrorDataResult<int>("Geçersiz rezervasyon.");
 
+        var now = DateTime.Now;
+
         // 1) varsa getir
         var existingId = await _orderDal.GetAll(o =>
                 o.ReservationId == reservationId &&
@@ -200,7 +217,21 @@ public sealed class OrderManager : IOrderService
             .FirstOrDefaultAsync();
 
         if (existingId.HasValue)
+        {
+            // ✅ Reservation.OrderId mirror
+            var reservation = await _reservationDal.GetAsync(r =>
+                r.Id == reservationId && !r.IsDeleted && r.IsActive);
+
+            if (reservation != null && reservation.OrderId != existingId.Value)
+            {
+                reservation.OrderId = existingId.Value;
+                reservation.UpdateAt = now;
+                _reservationDal.Update(reservation);
+                await _unitOfWork.CommitAsync();
+            }
+
             return new SuccessDataResult<int>(existingId.Value, "Aktif sipariş bulundu.");
+        }
 
         // 2) yoksa oluştur
         var order = new Order
@@ -209,83 +240,66 @@ public sealed class OrderManager : IOrderService
             IsActive = true,
             IsDeleted = false,
             IsPaid = false,
-            CreateAt = DateTime.Now
+            CreateAt = now
         };
 
         await _orderDal.AddAsync(order);
-        await _unitOfWork.CommitAsync();
+        await _unitOfWork.CommitAsync(); // order.Id oluşsun
+
+        // ✅ Reservation.OrderId mirror
+        var res2 = await _reservationDal.GetAsync(r =>
+            r.Id == reservationId && !r.IsDeleted && r.IsActive);
+
+        if (res2 != null && res2.OrderId != order.Id)
+        {
+            res2.OrderId = order.Id;
+            res2.UpdateAt = now;
+            _reservationDal.Update(res2);
+            await _unitOfWork.CommitAsync();
+        }
 
         return new SuccessDataResult<int>(order.Id, "Sipariş oluşturuldu.");
     }
 
 
-    public async Task<IResult> SaveItemsAsync(int orderId, IEnumerable<OrderItemCreateRequestDto> items)
+
+    public async Task<IDataResult<decimal>> SaveItemsAsync(int orderId, IEnumerable<OrderItemCreateRequestDto> items)
     {
         if (orderId <= 0)
-            return new ErrorResult("Geçersiz sipariş.");
+            return new ErrorDataResult<decimal>("Geçersiz sipariş.");
 
-        // 1) Incoming normalize + ProductId bazlı birleştir
+        // 1) Incoming normalize + ProductId bazlı birleştir (UI kaynağımız)
         var incoming = (items ?? Enumerable.Empty<OrderItemCreateRequestDto>())
             .Where(x => x.ProductId > 0 && x.Quantity > 0)
             .GroupBy(x => x.ProductId)
             .Select(g => new
             {
                 ProductId = g.Key,
-                QuantityInt = g.Sum(x => x.Quantity)
+                QuantityInt = g.Sum(x => (int)x.Quantity)
             })
             .ToList();
 
         if (incoming.Count == 0)
-            return new ErrorResult("Sipariş kalemi yok.");
+            return new ErrorDataResult<decimal>("Sipariş kalemi yok.");
 
-        // Quantity byte ise taşma kontrolü
         if (incoming.Any(x => x.QuantityInt > byte.MaxValue))
-            return new ErrorResult($"Adet 1 ürün için en fazla {byte.MaxValue} olabilir.");
+            return new ErrorDataResult<decimal>($"Adet 1 ürün için en fazla {byte.MaxValue} olabilir.");
 
         // 2) Order kontrolü
-        var order = await _orderDal.GetAsync(o => o.Id == orderId && !o.IsDeleted);
+        var order = await _orderDal.GetAsync(o => o.Id == orderId && !o.IsDeleted && o.IsActive);
         if (order is null)
-            return new ErrorResult("Sipariş bulunamadı.");
+            return new ErrorDataResult<decimal>("Sipariş bulunamadı.");
 
         if (order.IsPaid)
-            return new ErrorResult("Ödenmiş sipariş güncellenemez.");
+            return new ErrorDataResult<decimal>("Ödenmiş sipariş güncellenemez.");
 
-        // 3) Ürünleri tek sorguda çek (fiyat DB’den)
-        var productIds = incoming.Select(x => x.ProductId).Distinct().ToList();
-
-        var products = await _productDal
-            .GetAll(p => productIds.Contains(p.Id) && !p.IsDeleted && p.IsActive)
-            .Select(p => new
-            {
-                p.Id,
-                p.Price,
-                Stock = (int?)p.Stock // Stock int ise de sorun olmaz; nullable güvenliği
-            })
+        // 3) Mevcut kalemleri çek (aktif, silinmemiş olanlar stok senkronunda esas alınacak)
+        var existingActive = await _orderItemDal
+            .GetAll(x => x.OrderId == orderId && !x.IsDeleted && x.IsActive)
             .ToListAsync();
 
-        var foundIds = products.Select(x => x.Id).ToHashSet();
-        var missingIds = productIds.Where(id => !foundIds.Contains(id)).ToList();
-        if (missingIds.Count > 0)
-            return new ErrorResult("Bazı ürünler bulunamadı veya pasif: " + string.Join(",", missingIds));
-
-        var priceMap = products.ToDictionary(x => x.Id, x => x.Price);
-        var stockMap = products.ToDictionary(x => x.Id, x => x.Stock);
-
-        // 3.1) Stok kontrolü (stok düşürmüyor; sadece doğruluyor)
-        foreach (var inc in incoming)
-        {
-            var stock = stockMap[inc.ProductId] ?? 0; // null ise 0 kabul
-            if (stock < inc.QuantityInt)
-                return new ErrorResult($"Stok yetersiz. ProductId={inc.ProductId}");
-        }
-
-        // 4) Mevcut item’ları deleted dahil çek (revive/temizlik için)
-        var existing = await _orderItemDal
-            .GetAll(x => x.OrderId == orderId)
-            .ToListAsync();
-
-        // 4.1) Aynı ProductId’den birden fazla AKTİF satır varsa temizlik:
-        foreach (var grp in existing.Where(x => !x.IsDeleted).GroupBy(x => x.ProductId))
+        // Aynı ProductId’den birden fazla aktif satır varsa tekilleştir (opsiyonel ama iyi)
+        foreach (var grp in existingActive.GroupBy(x => x.ProductId))
         {
             var keep = grp.OrderByDescending(x => x.Id).First();
             foreach (var extra in grp.Where(x => x.Id != keep.Id))
@@ -297,73 +311,171 @@ public sealed class OrderManager : IOrderService
             }
         }
 
-        // (Aktif varsa onu; yoksa en güncel deleted olanı seç)
-        var existingByProductId = existing
+        // Tekrar çekmeye gerek yok; keep’ler zaten listede
+        existingActive = existingActive
+            .Where(x => !x.IsDeleted && x.IsActive)
             .GroupBy(x => x.ProductId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Where(x => !x.IsDeleted).OrderByDescending(x => x.Id).FirstOrDefault()
-                     ?? g.OrderByDescending(x => x.Id).First()
-            );
+            .Select(g => g.OrderByDescending(x => x.Id).First())
+            .ToList();
 
-        var incomingSet = incoming.Select(x => x.ProductId).ToHashSet();
+        var existingQtyMap = existingActive.ToDictionary(x => x.ProductId, x => (int)x.Quantity);
 
-        // 5) Incoming’de olmayan AKTİF kalemleri soft delete
-        foreach (var ex in existing.Where(e => !e.IsDeleted))
+        var incomingQtyMap = incoming.ToDictionary(x => x.ProductId, x => x.QuantityInt);
+
+        // 4) İşlem görecek tüm productId’ler (incoming + existing)
+        var allProductIds = incomingQtyMap.Keys.Union(existingQtyMap.Keys).ToList();
+
+        // 5) Ürünleri tek sorguda çek (fiyat + stok)
+        var products = await _productDal
+            .GetAll(p => allProductIds.Contains(p.Id) && !p.IsDeleted && p.IsActive)
+            .ToListAsync();
+
+        var productById = products.ToDictionary(p => p.Id, p => p);
+
+        // Ürün doğrulama
+        var missingIds = allProductIds.Where(id => !productById.ContainsKey(id)).ToList();
+        if (missingIds.Count > 0)
+            return new ErrorDataResult<decimal>("Bazı ürünler bulunamadı veya pasif: " + string.Join(",", missingIds));
+
+        // 6) Stok kontrolü (net düşüş gereken ürünler)
+        // net = newQty - oldQty; net>0 ise stoktan düşülecek
+        foreach (var pid in allProductIds)
         {
-            if (!incomingSet.Contains(ex.ProductId))
+            var newQty = incomingQtyMap.TryGetValue(pid, out var nq) ? nq : 0;
+            var oldQty = existingQtyMap.TryGetValue(pid, out var oq) ? oq : 0;
+
+            var netDecrease = newQty - oldQty;
+            if (netDecrease > 0)
             {
-                ex.IsDeleted = true;
-                ex.IsActive = false;
-                ex.UpdateAt = DateTime.Now;
-                _orderItemDal.Update(ex);
+                var pr = productById[pid];
+                if (pr.Stock < netDecrease)
+                    return new ErrorDataResult<decimal>($"Stok yetersiz: {pr.Name}");
             }
         }
 
-        // 6) Upsert
-        foreach (var inc in incoming)
+        // 7) DB item’ları (deleted dahil) upsert için çek
+        var existingAll = await _orderItemDal
+            .GetAll(x => x.OrderId == orderId)
+            .ToListAsync();
+
+        // upsert lookup: ürün bazında (aktif olan varsa onu; yoksa en günceli)
+        var existingByProduct = existingAll
+            .GroupBy(x => x.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Where(x => !x.IsDeleted && x.IsActive).OrderByDescending(x => x.Id).FirstOrDefault()
+                     ?? g.OrderByDescending(x => x.Id).First()
+            );
+
+        // 8) Delta uygula: stok + kalem sync
+        foreach (var pid in allProductIds)
         {
-            var qty = (byte)inc.QuantityInt; // Quantity int ise cast kaldır
+            var newQty = incomingQtyMap.TryGetValue(pid, out var nq) ? nq : 0;
+            var oldQty = existingQtyMap.TryGetValue(pid, out var oq) ? oq : 0;
 
-            // fiyat mutlaka DB’den
-            if (!priceMap.TryGetValue(inc.ProductId, out var dbPrice))
-                return new ErrorResult($"Ürün fiyatı bulunamadı. ProductId={inc.ProductId}");
+            var net = newQty - oldQty; // + ise düş, - ise iade et
 
-            if (existingByProductId.TryGetValue(inc.ProductId, out var ex))
+            // Stok güncelle
+            if (net != 0)
             {
-                // varsa update: sadece Quantity güncelle (fiyat SABİT kalsın)
-                ex.Quantity = qty;
+                var pr = productById[pid];
+                pr.Stock -= net; // net negatifse stok artar (iade)
+                _productDal.Update(pr);
+            }
 
-                // revive
-                ex.IsActive = true;
-                ex.IsDeleted = false;
-                ex.UpdateAt = DateTime.Now;
+            // DB kalem senkronu
+            if (existingByProduct.TryGetValue(pid, out var ex))
+            {
+                if (newQty <= 0)
+                {
+                    // UI’da yok -> soft delete
+                    ex.IsDeleted = true;
+                    ex.IsActive = false;
+                    ex.UpdateAt = DateTime.Now;
+                    _orderItemDal.Update(ex);
+                }
+                else
+                {
+                    // UI’da var -> update
+                    ex.Quantity = (byte)newQty;
 
-                // Edge-case: eski kayıtta UnitPrice 0 kalmışsa ilk seferde set edebilirsin
-                // if (ex.UnitPrice <= 0) ex.UnitPrice = dbPrice;
+                    // UnitPrice politikanız:
+                    // - İlk eklemede DB fiyatı yazıyorsunuz (doğru)
+                    // - Sonradan fiyat değişse bile sipariş kalem fiyatını sabit tutmak istiyorsanız ex.UnitPrice'a dokunmayın.
+                    // - Eğer güncel fiyatla güncellensin istiyorsanız: ex.UnitPrice = productById[pid].Price;
 
-                _orderItemDal.Update(ex);
+                    ex.IsDeleted = false;
+                    ex.IsActive = true;
+                    ex.UpdateAt = DateTime.Now;
+                    _orderItemDal.Update(ex);
+                }
             }
             else
             {
-                // yoksa insert: DB fiyatını yaz
-                var entity = new OrderItem
+                // DB’de yok, UI’da varsa -> insert
+                if (newQty > 0)
                 {
-                    OrderId = orderId,
-                    ProductId = inc.ProductId,
-                    Quantity = qty,
-                    UnitPrice = dbPrice,
-                    IsActive = true,
-                    IsDeleted = false,
-                    CreateAt = DateTime.Now
-                };
-
-                await _orderItemDal.AddAsync(entity);
+                    var pr = productById[pid];
+                    var entity = new OrderItem
+                    {
+                        OrderId = orderId,
+                        ProductId = pid,
+                        Quantity = (byte)newQty,
+                        UnitPrice = pr.Price, // sipariş anındaki fiyatı sabitle
+                        IsActive = true,
+                        IsDeleted = false,
+                        CreateAt = DateTime.Now
+                    };
+                    await _orderItemDal.AddAsync(entity);
+                }
             }
         }
 
         await _unitOfWork.CommitAsync();
-        return new SuccessResult("Sipariş kalemleri kaydedildi.");
+        var subTotal = await _orderItemDal.GetAll(x =>
+                x.OrderId == orderId &&
+                !x.IsDeleted &&
+                x.IsActive)
+            .SumAsync(x => x.UnitPrice * x.Quantity);
+
+        // 2️⃣ KDV
+        var vatAmount = Math.Round(
+            subTotal * VatRate,
+            2,
+            MidpointRounding.AwayFromZero
+        );
+
+        // 3️⃣ Genel toplam (KDV dahil)
+        var grandTotal = subTotal + vatAmount;
+
+        // 4️⃣ Order tablosunu güncelle
+        order.Total = grandTotal;        // veya GrandTotal
+        order.UpdateAt = DateTime.Now;
+
+        _orderDal.Update(order);
+        await _unitOfWork.CommitAsync();
+
+        // 5️⃣ KDV DAHİL TOTAL DÖN
+        return new SuccessDataResult<decimal>(
+            grandTotal,
+            $"Sipariş kaydedildi. (Ara: {subTotal:N2}, KDV: {vatAmount:N2})"
+        );
+
+        // order.ReservationId boş değilse Reservation.OrderId'yi garanti doldur
+        if (order.ReservationId <= 0)
+            return new ErrorDataResult<decimal>("Sipariş rezervasyona bağlı değil.");
+
+        var reservation = await _reservationDal.GetAsync(r =>
+            r.Id == order.ReservationId && !r.IsDeleted && r.IsActive);
+
+        if (reservation != null && reservation.OrderId != order.Id)
+        {
+            reservation.OrderId = order.Id;
+            reservation.UpdateAt = DateTime.Now;
+            _reservationDal.Update(reservation);
+            await _unitOfWork.CommitAsync();
+        }
+
     }
 
 
@@ -410,5 +522,85 @@ public sealed class OrderManager : IOrderService
     }
 
 
+    public async Task<IResult> PayAsync(int orderId)
+    {
+        if (orderId <= 0)
+            return new ErrorResult("Geçersiz sipariş.");
+
+        var now = DateTime.Now;
+
+        var order = await _orderDal.GetAll(o => o.Id == orderId && !o.IsDeleted)
+            .Include(o => o.Reservation)
+            .FirstOrDefaultAsync();
+
+        if (order == null)
+            return new ErrorResult("Sipariş bulunamadı.");
+
+        if (order.IsPaid)
+            return new ErrorResult("Bu sipariş zaten ödenmiş.");
+
+        // 1️⃣ Order güncelle
+        order.IsPaid = true;
+        order.IsActive = false;
+        order.UpdateAt = now;
+        _orderDal.Update(order);
+
+        // 2️⃣ Reservation güncelle
+        if (order.Reservation != null)
+        {
+            order.Reservation.IsActive = false;
+            order.Reservation.IsCheckedIn = false;
+            order.Reservation.UpdateAt = now;
+            _reservationDal.Update(order.Reservation);
+        }
+
+        await _unitOfWork.CommitAsync();
+
+        return new SuccessResult("Ödeme başarıyla alındı.");
+    }
+    public async Task<IDataResult<OrderPaymentResponseDto>> GetPaymentContextByOrderIdAsync(int orderId)
+    {
+        if (orderId <= 0)
+            return new ErrorDataResult<OrderPaymentResponseDto>("Geçersiz sipariş.");
+
+        var ctx = await _orderDal.GetAll(o => o.Id == orderId && !o.IsDeleted)
+            .Include(o => o.Reservation).ThenInclude(r => r.Table)
+            .Include(o => o.Reservation).ThenInclude(r => r.Customer)
+            .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+            // Eğer Payment tablosu Order’a bağlıysa Include ekleyin:
+            //.Include(o => o.Payments)
+            .AsNoTracking()
+            .Select(o => new OrderPaymentResponseDto
+            {
+                OrderId = o.Id,
+                Total = o.Total,
+                IsPaid = o.IsPaid,
+                IsActive = o.IsActive,
+
+                ReservationId = o.ReservationId,
+                TableName = o.Reservation.Table.Name,
+                CustomerFullName = o.Reservation.Customer.FirstName + " " + o.Reservation.Customer.LastName,
+                StartAt = o.Reservation.StartAt,
+                EndAt = o.Reservation.EndAt,
+
+                Items = o.OrderItems
+                    .Where(i => !i.IsDeleted && i.IsActive)
+                    .Select(i => new OrderItemPaymentRowDto()
+                    {
+                        ProductName = i.Product.Name,
+                        Quantity = i.Quantity,
+                        UnitPrice = i.UnitPrice
+                    }).ToList(),
+
+                // Payment tablonuz varsa burayı kendi yapınıza göre doldurun
+                Payments = new List<PaymentRowDto>()
+            })
+            .FirstOrDefaultAsync();
+
+        if (ctx is null)
+            return new ErrorDataResult<OrderPaymentResponseDto>("Sipariş bulunamadı.");
+
+        return new SuccessDataResult<OrderPaymentResponseDto>(ctx, "Sipariş bilgileri getirildi.");
+    }
 
 }

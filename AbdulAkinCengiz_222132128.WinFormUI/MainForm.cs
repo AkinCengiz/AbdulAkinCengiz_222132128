@@ -148,10 +148,24 @@ namespace AbdulAkinCengiz_222132128.WinFormUI
             orderForm.ShowDialog();
         }
 
-        private void btnReservation_Click(object sender, EventArgs e)
+        private async void btnReservation_Click(object sender, EventArgs e)
         {
-            ReservationForm reservationForm = _serviceProvider.GetRequiredService<ReservationForm>();
+            var reservationForm = _serviceProvider.GetRequiredService<ReservationForm>();
+
+            reservationForm.FormClosed += async (s, args) => RefreshAllAsync();
+
             reservationForm.ShowDialog();
+        }
+
+        private void btnProductManagement_Click(object sender, EventArgs e)
+        {
+            ProductAndCategoryManagementForm form = _serviceProvider.GetRequiredService<ProductAndCategoryManagementForm>();
+            form.ShowDialog();
+        }
+        private async Task RefreshAllAsync()
+        {
+            await LoadDashboardAsync();
+            await GetReservation();
         }
     }
 }

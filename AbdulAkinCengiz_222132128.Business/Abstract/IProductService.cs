@@ -13,4 +13,7 @@ public interface IProductService : IGenericService<Product,ProductResponseDto,Pr
 {
     Task<IDataResult<List<ProductResponseDto>>> GetProductByCategoryIdAsync(int categoryId);
     Task<IDataResult<List<ProductResponseDto>>> GetAllForOrderAsync();
+    Task<IDataResult<List<ProductResponseDto>>> GetProductsSortedByCategoryAsync();
+    Task<IDataResult<List<ProductResponseDto>>> GetProductsSortedByNameAsync();
+    Task<IDataResult<List<ProductResponseDto>>> GetProductsSortedByPriceAsync();
 }
